@@ -13,7 +13,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun MyBottomNavbar(onNavigate: (String) -> Unit) {
-    var selectedItem by remember { mutableStateOf("Home") }
+    var selectedItem by remember { mutableStateOf("Camera") }
 
     BottomAppBar {
         Row(

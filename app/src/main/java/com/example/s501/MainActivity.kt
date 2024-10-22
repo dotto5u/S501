@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                         .padding(innerPadding)) {
                         when (currentScreen) {
-                            "Home" -> Home()
+                            "History" -> History()
                             "Camera" -> CameraPreview(
                                 controller = controller,
                                 modifier = Modifier

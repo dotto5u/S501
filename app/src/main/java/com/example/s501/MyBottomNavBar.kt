@@ -21,9 +21,9 @@ fun MyBottomNavbar(onNavigate: (String) -> Unit) {
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            NavbarItem("Home", selectedItem == "Home") {
-                selectedItem = "Home"
-                onNavigate("Home")
+            NavbarItem("History", selectedItem == "History") {
+                selectedItem = "History"
+                onNavigate("History")
             }
 
             NavbarItem("Camera", selectedItem == "Camera") {

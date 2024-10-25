@@ -72,4 +72,10 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.3.4")
     implementation("androidx.camera:camera-view:1.3.4")
     implementation("androidx.camera:camera-extensions:1.3.4")
+
+    implementation("org.tensorflow:tensorflow-lite:+")
+    implementation("org.tensorflow:tensorflow-lite-task-vision:+")
+    implementation("org.tensorflow:tensorflow-lite-gpu-delegate-plugin:+")
+    implementation("org.tensorflow:tensorflow-lite-gpu:+")
+
 }

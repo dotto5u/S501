@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
@@ -25,7 +26,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,16 +49,17 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             S501Theme {
-                var classifications by remember {
-                    mutableStateOf(emptyList<Classification>())
+                var currentScreen by remember { mutableStateOf("Camera") }
+                var detectedObjects by remember {
+                    mutableStateOf(emptyList<DetectedObject>())
                 }
                 val analyzer = remember {
                     DishImageAnalyzer(
-                        classifier = TensorFlowDishClassifier(
+                        detector = TensorFlowDishDetector(
                             context = applicationContext,
                         ),
                         onResult = {
-                            classifications = it
+                            detectedObjects = it
                         }
                     )
                 }
@@ -67,34 +75,90 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
-                Box(
-                    modifier = Modifier.fillMaxSize()
-                )
-                {
-                    CameraPreview(controller, Modifier.fillMaxSize().align(Alignment.TopCenter))
+                Scaffold(modifier = Modifier.fillMaxSize(),
+                    bottomBar = {
+                        MyBottomNavbar { screen ->
+                            currentScreen = screen
+                        }
+                    }
+                ) { innerPadding ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                    ) {
+                        when (currentScreen) {
+                            "History" -> History()
+                            "Camera" -> Box(
+                                modifier = Modifier.fillMaxSize()
+                            )
+                            {
+                                CameraPreview(controller,
+                                    Modifier
+                                        .fillMaxSize()
+                                        .align(Alignment.TopCenter))
 
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        classifications.forEach{
-                            Text(
-                                text = it.name,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(MaterialTheme.colorScheme.primaryContainer)
-                                    .padding(8.dp),
-                                textAlign = TextAlign.Center,
-                                fontSize = 20.sp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = it.certainty.toString(),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(MaterialTheme.colorScheme.primaryContainer)
-                                    .padding(8.dp),
-                                textAlign = TextAlign.Center,
-                                fontSize = 20.sp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+
+                                Canvas(
+                                    modifier = Modifier.fillMaxSize(),
+
+                                ) {
+                                    //temporary code for debugging
+
+                                    if (detectedObjects != emptyList<DetectedObject>()){
+                                        drawContext.canvas.nativeCanvas.drawText(
+                                            "Yes",
+                                           0f,
+                                            0f,
+                                            android.graphics.Paint().apply {
+                                                color = android.graphics.Color.RED
+                                                textSize = 40f
+                                            }
+                                        )
+                                    }
+                                    else{
+                                        drawContext.canvas.nativeCanvas.drawText(
+                                            "No",
+                                            0f,
+                                            0f,
+                                            android.graphics.Paint().apply {
+                                                color = android.graphics.Color.RED
+                                                textSize = 40f
+                                            }
+                                        )
+                                    }
+
+                                    for (detectedObject in detectedObjects) {
+                                        drawRect(
+                                            color = androidx.compose.ui.graphics.Color.Green,
+                                            topLeft = Offset(
+                                                detectedObject.box.left,
+                                                detectedObject.box.top
+                                            ),
+                                            size = Size(
+                                                detectedObject.box.width(),
+                                                detectedObject.box.height()
+                                            ),
+                                            style = Stroke(width = 10f),
+                                        )
+
+                                        drawContext.canvas.nativeCanvas.drawText(
+                                            "${detectedObject.classId}: ${
+                                                "%.2f".format(
+                                                    detectedObject.certainty * 100
+                                                )
+                                            }%",
+                                            detectedObject.box.left,
+                                            detectedObject.box.top - 10,
+                                            android.graphics.Paint().apply {
+                                                color = android.graphics.Color.RED
+                                                textSize = 40f
+                                            }
+                                        )
+
+                                    }
+                                }
+                            }
                         }
                     }
                 }

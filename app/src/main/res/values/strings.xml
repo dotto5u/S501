@@ -1,6 +1,3 @@
 <resources>
     <string name="app_name">S501</string>
-    <string name="history_title">Historique</string>
-    <string name="history_filter_text">Filtrer par :</string>
-    <string name="history_filter_button_text_category">Catégorie</string>
 </resources>

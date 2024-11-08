@@ -2,6 +2,7 @@ package com.example.s501
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.RectF
 import android.util.Log
 import android.view.Surface
 import org.tensorflow.lite.support.image.ImageProcessor
@@ -11,16 +12,24 @@ import org.tensorflow.lite.task.core.vision.ImageProcessingOptions
 import org.tensorflow.lite.task.vision.classifier.ImageClassifier
 import org.tensorflow.lite.task.vision.detector.ObjectDetector
 import org.tensorflow.lite.task.vision.detector.ObjectDetector.ObjectDetectorOptions
+import java.util.Arrays
 
-class TensorFlowDishClassifier(
+class TensorFlowDishDetector(
     private val context : Context,
-    private val precisionThreshold : Float = 0.4f,
-    private val maxResults : Int = 1
-) : DishClassifier {
+    private val screenWidth : Int,
+    private val screenHeight : Int,
+) : DishDetector {
 
-    private val modelPath = "2.tflite"
+    private val modelWantedWidth = 300;
+    private val modelWantedHeight = 300;
 
-    private var classifier : ObjectDetector? = null
+    private val maxResults : Int = 1;
+
+    private val precisionThreshold : Float = 0.4f;
+
+    private val modelPath = "SDDMobilenetV1.tflite"
+
+    private var detector : ObjectDetector? = null
 
     private fun setupClassifier(){
         val baseOptions : BaseOptions = BaseOptions.builder()
@@ -34,7 +43,7 @@ class TensorFlowDishClassifier(
             .build()
 
         try{
-            classifier = ObjectDetector.createFromFileAndOptions(
+            detector = ObjectDetector.createFromFileAndOptions(
                 context,
                 modelPath,
                 options
@@ -45,34 +54,45 @@ class TensorFlowDishClassifier(
         }
     }
 
-    override fun classify(bitmap: Bitmap, rotation: Int): List<Classification> {
-        if (classifier == null){
+    override fun detect(bitmap: Bitmap, rotation: Int): List<DetectedObject> {
+        if (detector == null){
             setupClassifier()
         }
 
         val imageProcessor = ImageProcessor.Builder().build()
 
-        val tensorFlowImage = imageProcessor.process(TensorImage.fromBitmap(bitmap))
+        //Resize bitmap (300*300 because of model) and process it
+        val tensorFlowImage = imageProcessor.process(
+            TensorImage.fromBitmap(bitmap)
+        );
 
         val imageProcessingOptions = ImageProcessingOptions.builder()
             .setOrientation(getOrientationFromRotation(rotation))
             .build()
 
-        val results = classifier?.detect(tensorFlowImage, imageProcessingOptions)
 
-        val tempResults = mutableListOf<Classification>();
+
+        val results = detector?.detect(tensorFlowImage, imageProcessingOptions)
+
+        val tempResults = mutableListOf<DetectedObject>();
+
+        val widthScaleFactor = screenWidth / modelWantedWidth;
+        val heightScaleFactor = screenHeight/ modelWantedHeight;
 
         results?.forEach {
             tempResults.add(
-                Classification(
+                DetectedObject(
                     name = it.categories.maxOf { it.label },
                     certainty = it.categories.maxOf { it.score },
-                    box = it.boundingBox
+                    box = RectF(
+                        it.boundingBox.left,
+                        it.boundingBox.top,
+                        it.boundingBox.right,
+                        it.boundingBox.bottom,
+                    )
                 )
             )
         }
-
-        Log.w("tempResults", tempResults.toString())
 
         return tempResults;
     }

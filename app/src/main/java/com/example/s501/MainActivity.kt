@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -60,17 +61,11 @@ class MainActivity : ComponentActivity() {
                 val displayMetrics = DisplayMetrics()
                 val windowManager = applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
                 windowManager.defaultDisplay.getMetrics(displayMetrics);
-                val analyzer = remember {
-                    DishImageAnalyzer(
-                        detector = TensorFlowDishDetector(
-                            context = applicationContext,
-                            screenWidth = displayMetrics.widthPixels,
-                            screenHeight = displayMetrics.heightPixels,
-                        ),
-                        onResult = {
-                            detectedObjects = it
-                        }
-                    )
+
+                var cameraPreviewSize = remember { mutableStateOf(Size(0f, 0f)) };
+
+                var analyzer = remember {
+                    mutableStateOf<DishImageAnalyzer?>(null)
                 }
                 val controller = remember {
                     LifecycleCameraController(applicationContext).apply {
@@ -78,12 +73,26 @@ class MainActivity : ComponentActivity() {
                             CameraController.IMAGE_ANALYSIS or
                                     CameraController.IMAGE_CAPTURE
                         )
-                        setImageAnalysisAnalyzer(
+                    }
+                }
+
+                LaunchedEffect(cameraPreviewSize) {
+                    if (cameraPreviewSize.value.width > 0 && cameraPreviewSize.value.height > 0) {
+                        analyzer.value = DishImageAnalyzer(
+                            detector = TensorFlowDishDetector(
+                                context = applicationContext,
+                                screenWidth = cameraPreviewSize.value.width,
+                                screenHeight = cameraPreviewSize.value.height,
+                            ),
+                            onResult = { detectedObjects = it }
+                        )
+                        controller.setImageAnalysisAnalyzer(
                             ContextCompat.getMainExecutor(applicationContext),
-                            analyzer
+                            analyzer.value!!
                         )
                     }
                 }
+
                 Scaffold(modifier = Modifier.fillMaxSize(),
                     bottomBar = {
                         MyBottomNavbar { screen ->
@@ -105,7 +114,14 @@ class MainActivity : ComponentActivity() {
                                 CameraPreview(controller,
                                     Modifier
                                         .fillMaxSize()
-                                        .align(Alignment.TopCenter))
+                                        .align(Alignment.TopCenter)
+                                        .onSizeChanged { size->
+                                            cameraPreviewSize.value = Size(
+                                                size.width.toFloat(),
+                                                size.height.toFloat()
+                                            );
+                                        }
+                                )
 
 
                                 Canvas(

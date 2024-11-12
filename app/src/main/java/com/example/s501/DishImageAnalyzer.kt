@@ -1,5 +1,7 @@
 package com.example.s501
 
+import android.util.Log
+import android.util.Size
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 
@@ -21,7 +23,9 @@ class DishImageAnalyzer (
         val bitmap = image
             .toBitmap()
 
-        val results = detector.detect(bitmap, rotationDegrees)
+        val imageSize = Size(image.width, image.height);
+
+        val results = detector.detect(bitmap, rotationDegrees, imageSize)
         onResult(results)
 
         image.close()

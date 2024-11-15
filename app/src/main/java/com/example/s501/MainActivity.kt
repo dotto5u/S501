@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.s501.ui.screen.History
 import com.example.s501.ui.theme.S501Theme
 
 class MainActivity : ComponentActivity() {

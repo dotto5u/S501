@@ -3,10 +3,12 @@ package com.example.s501
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.graphics.Rect
 import android.graphics.RectF
 import android.util.Log
 import android.view.Surface
 import org.tensorflow.lite.Interpreter
+import kotlin.math.exp
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.task.core.BaseOptions
@@ -20,7 +22,6 @@ import java.util.Arrays
 
 class TensorFlowDishDetector(
     private val context : Context,
-    private val precisionThreshold : Float = 0.6f,
 ) : DishDetector {
 
     init {
@@ -29,9 +30,12 @@ class TensorFlowDishDetector(
 
     private val modelPath = "yolov2-tiny-test3.tflite";
 
+    private val numClasses = 80;
+
     private lateinit var interpreter : Interpreter;
     private val inputSize = 416;
     private val IoUThreshold = 0.5f;
+    val certaintyThreshold = 0.6f;
 
     private fun setupInterpreter(){
         val options = Interpreter.Options().apply {
@@ -99,33 +103,90 @@ class TensorFlowDishDetector(
             sortedObjects = remainingObjects
         }
 
+        for (i in selectedObjects){
+            Log.d("Test", i.toString())
+        }
+
         return selectedObjects
     }
 
     private fun processYOLOOutput(outputData: Array<Array<Array<FloatArray>>>): List<DetectedObject> {
         val results = mutableListOf<DetectedObject>();
-        val certaintyThreshold = 0.5f;
 
         for (i in outputData.indices) {
             for (j in outputData[i].indices){
-                for (dectectedObject in outputData[i][j]){
-                    val certainty = dectectedObject[4];
-                    if (certainty > certaintyThreshold) {
-                        val classId = dectectedObject.sliceArray(5 until dectectedObject.size).indexOfFirst { it > certaintyThreshold }
-                        val certaintyScore = dectectedObject[4] * dectectedObject[classId + 5]
-                        val box = RectF(
-                            dectectedObject[0] - dectectedObject[2] / 2,
-                            dectectedObject[1] - dectectedObject[3] / 2,
-                            dectectedObject[0] + dectectedObject[2] / 2,
-                            dectectedObject[1] + dectectedObject[3] / 2,
-                        )
-                        results.add(DetectedObject(classId, certaintyScore, box))
+                for (dectectedObjectLogits in outputData[i][j]){
+                    val tempResults = extractDetections(dectectedObjectLogits, certaintyThreshold);
+
+                    //Saving results
+                    for (result in tempResults){
+                        results.add(result);
                     }
                 }
             }
         }
 
         return nonMaxSuppression(results)
+    }
+
+    private fun extractDetections(detectedObjectLogits: FloatArray, certaintyThreshold: Float): List<DetectedObject> {
+        val results = mutableListOf<DetectedObject>();
+
+        val otherData = FloatArray(5);
+        val classProbabilities = FloatArray(numClasses);
+
+
+        //TODO - Do this cleaner
+        for (i in 0..4){
+            otherData[i] = detectedObjectLogits[i];
+        }
+
+        val confidence = otherData[4];
+
+        for (i in 5..84){
+            classProbabilities[i-5] = detectedObjectLogits[i];
+        }
+
+        val probabilities = softmax(classProbabilities)
+
+        val maxIndex = probabilities.indices.maxByOrNull { probabilities[it] } ?: -1;
+        val certainty = probabilities[maxIndex];
+
+        if (certainty > certaintyThreshold) {
+            val xCenter = otherData[0];
+            val yCenter = otherData[1];
+            val width = otherData[2];
+            val height = otherData[3];
+
+            val box = RectF(
+                xCenter - width / 2,
+                yCenter - height / 2,
+                xCenter + width / 2,
+                yCenter + height / 2,
+            )
+
+            Log.e("Confidence", confidence.toString());
+            //If confidence is negative or more than 1, it means it's wrong
+
+            results.add(DetectedObject(maxIndex, certainty * confidence, box))
+        }
+
+        return results
+    }
+
+
+    //Function to turn logits into probabilities
+    fun softmax(logits: FloatArray): FloatArray {
+        val expValues = FloatArray(logits.size);
+        val maxLogit = logits.maxOrNull() ?: 0.0f;
+        var sumExpValues = 0.0f;
+
+        for (i in logits.indices) {
+            expValues[i] = exp(logits[i] - maxLogit);
+            sumExpValues += expValues[i];
+        }
+
+        return expValues.map { it / sumExpValues }.toFloatArray(); //Normalize to get probabilities
     }
 
 
@@ -140,12 +201,8 @@ class TensorFlowDishDetector(
 
         val tensorShape = interpreter.getOutputTensor(0).shape();  //returns the tensor shape at index 0 (because our model only has 1 tensor) in the form of an array of ints
 
-        Log.w("OutputTensor", "Output tensor shape: ${tensorShape.contentToString()}")
-
         //4D array to receive output data, will need refactoring because currently it isn't automatic, it needs hardcoded size values (which will change when we will add labels to the model)
         val outputData = Array(1) { Array(13) { Array(13) { FloatArray(425) } } }
-
-        Log.w("InputBuffer", "Input buffer size: ${byteBufferImage.capacity()}");
 
         Log.w("Interpreter", "Running inference");
         try {
@@ -156,8 +213,6 @@ class TensorFlowDishDetector(
             throw Exception("Error occurred during inference, shutting down");
         }
         Log.w("Interpreter", "Inference complete.");
-
-
         //Post-process the model output
         return processYOLOOutput(outputData);
     }

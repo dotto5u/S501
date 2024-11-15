@@ -6,6 +6,8 @@ import android.graphics.RectF
 import android.util.Log
 import android.util.Size
 import android.view.Surface
+import androidx.collection.IntIntPair
+import androidx.core.graphics.times
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
@@ -66,37 +68,76 @@ class TensorFlowDishDetector(
     }
 
     //Changes a rectF aspectRatio and resizes it from the baseSize to the targetSize
-    fun scaleRect(baseSize : Size ,targetSize : Size, rectToScale : RectF) : RectF{
+    /*fun scaleRect(baseSize : Size ,targetSize : Size, rectToScale : RectF) : RectF{
 
         //Calculating conversion values
         val targetAspectRatio = targetSize.width.toFloat() / targetSize.height.toFloat();
 
         //Converting the actual rectF
-
         val newWidth = rectToScale.height() * targetAspectRatio;
 
-        val newHeight = rectToScale.width()/targetSize.width.toFloat() * targetSize.height.toFloat();
+        Log.d("TestDimensions", newWidth.toString())
 
-        val widthScaleDifference = targetSize.width.toFloat()/newWidth;
-        val heightScaleDifference = targetSize.height.toFloat()/newHeight;
+        val widthScaleFactor = targetSize.width.toFloat()/newWidth;
+        val heightScaleFactor = targetSize.height.toFloat()/baseSize.height;
 
-        val newRight = rectToScale.right/rectToScale.width() * newWidth;
-        val newLeft = rectToScale.left/rectToScale.width() * newWidth;
+        val newRight = rectToScale.right/baseSize.width * newWidth;
+        val newLeft = rectToScale.left/baseSize.width * newWidth;
 
         return RectF(
-            newLeft * widthScaleDifference,
-            rectToScale.top * heightScaleDifference,
-            newRight * widthScaleDifference,
-            rectToScale.bottom * heightScaleDifference,
+            newLeft * widthScaleFactor,
+            rectToScale.top * heightScaleFactor,
+            newRight * widthScaleFactor,
+            rectToScale.bottom * heightScaleFactor,
+        )
+    }*/
+
+    fun scaleRect(baseSize : Size ,targetSize : Size, rectToScale : RectF) : RectF{
+
+        val widthScaleFactor = targetSize.width.toFloat()/baseSize.width.toFloat();
+        val heightScaleFactor = targetSize.height.toFloat()/baseSize.height.toFloat();
+
+        val newWidth = rectToScale.width() * widthScaleFactor;
+        val newHeight = rectToScale.height() * heightScaleFactor;
+
+        val newLeft =  rectToScale.left/rectToScale.width() * newWidth;
+        val newRight = rectToScale.right/rectToScale.width() * newWidth;
+        val newTop = rectToScale.top/rectToScale.height() * newHeight;
+        val newBottom = rectToScale.bottom/rectToScale.height() * newHeight;
+
+        return RectF(
+            newLeft,
+            newTop,
+            newRight,
+            newBottom,
         )
     }
+
+    /*fun scaleRect(baseSize : Size ,targetSize : Size, rectToScale : RectF) : RectF{
+
+        val widthScaleFactor = targetSize.width.toFloat()/baseSize.width.toFloat();
+        val heightScaleFactor = targetSize.height.toFloat()/baseSize.height.toFloat();
+
+        val newLeft = rectToScale.left * widthScaleFactor;
+        val newRight = rectToScale.right * widthScaleFactor;
+        val newTop = rectToScale.top * heightScaleFactor;
+        val newBottom = rectToScale.bottom * heightScaleFactor;
+
+        return RectF(
+            newLeft,
+            newTop,
+            newRight,
+            newBottom,
+        )
+    }*/
+
+
 
     override fun detect(bitmap: Bitmap, rotation: Int, imageSize : Size): List<DetectedObject> {
         if (detector == null){
             setupClassifier()
         }
 
-        //Resize bitmap (300*300 because of model) and process it
         val tensorFlowImage = imageProcessor.process(
             TensorImage.fromBitmap(bitmap)
         );
@@ -109,8 +150,7 @@ class TensorFlowDishDetector(
 
         val tempResults = mutableListOf<DetectedObject>();
 
-        val widthScaleFactor = screenWidth / imageSize.width;
-        val heightScaleFactor = screenHeight / imageSize.height;
+        Log.d("Coords", "Base : " + imageSize.width.toString() + "x" + imageSize.height.toString() + "\nTarget : " + screenWidth.toString() + "x" + screenHeight.toString())
 
         results?.forEach {
             Log.w("OriginalBoundingBox", it.boundingBox.toString());
@@ -125,10 +165,10 @@ class TensorFlowDishDetector(
                             screenHeight.toInt()
                         ),
                         RectF(
-                            it.boundingBox.left * widthScaleFactor,
-                            it.boundingBox.top * heightScaleFactor,
-                            it.boundingBox.right * widthScaleFactor,
-                            it.boundingBox.bottom * heightScaleFactor,
+                            it.boundingBox.left,
+                            it.boundingBox.top,
+                            it.boundingBox.right,
+                            it.boundingBox.bottom,
                         )
                     )
                 )
@@ -140,7 +180,6 @@ class TensorFlowDishDetector(
     }
 
     private fun getOrientationFromRotation(rotation : Int) : ImageProcessingOptions.Orientation{
-        Log.w("RotationDebug", "rotationDegrees: $rotation")
         return when(rotation){
             Surface.ROTATION_270 -> ImageProcessingOptions.Orientation.BOTTOM_RIGHT
             Surface.ROTATION_90 -> ImageProcessingOptions.Orientation.TOP_LEFT

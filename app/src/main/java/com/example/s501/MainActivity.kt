@@ -58,13 +58,10 @@ class MainActivity : ComponentActivity() {
                 var detectedObjects by remember {
                     mutableStateOf(emptyList<DetectedObject>())
                 }
-                val displayMetrics = DisplayMetrics()
-                val windowManager = applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-                windowManager.defaultDisplay.getMetrics(displayMetrics);
 
-                var cameraPreviewSize = remember { mutableStateOf(Size(0f, 0f)) };
+                val cameraPreviewSize = remember { mutableStateOf(Size(0f, 0f)) };
 
-                var analyzer = remember {
+                val analyzer = remember {
                     mutableStateOf<DishImageAnalyzer?>(null)
                 }
                 val controller = remember {

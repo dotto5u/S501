@@ -6,17 +6,13 @@ import android.graphics.RectF
 import android.util.Log
 import android.util.Size
 import android.view.Surface
-import androidx.collection.IntIntPair
-import androidx.core.graphics.times
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
 import org.tensorflow.lite.task.core.BaseOptions
 import org.tensorflow.lite.task.core.vision.ImageProcessingOptions
-import org.tensorflow.lite.task.vision.classifier.ImageClassifier
 import org.tensorflow.lite.task.vision.detector.ObjectDetector
 import org.tensorflow.lite.task.vision.detector.ObjectDetector.ObjectDetectorOptions
-import java.util.Arrays
 
 class TensorFlowDishDetector(
     private val context : Context,
@@ -68,31 +64,7 @@ class TensorFlowDishDetector(
     }
 
     //Changes a rectF aspectRatio and resizes it from the baseSize to the targetSize
-    /*fun scaleRect(baseSize : Size ,targetSize : Size, rectToScale : RectF) : RectF{
-
-        //Calculating conversion values
-        val targetAspectRatio = targetSize.width.toFloat() / targetSize.height.toFloat();
-
-        //Converting the actual rectF
-        val newWidth = rectToScale.height() * targetAspectRatio;
-
-        Log.d("TestDimensions", newWidth.toString())
-
-        val widthScaleFactor = targetSize.width.toFloat()/newWidth;
-        val heightScaleFactor = targetSize.height.toFloat()/baseSize.height;
-
-        val newRight = rectToScale.right/baseSize.width * newWidth;
-        val newLeft = rectToScale.left/baseSize.width * newWidth;
-
-        return RectF(
-            newLeft * widthScaleFactor,
-            rectToScale.top * heightScaleFactor,
-            newRight * widthScaleFactor,
-            rectToScale.bottom * heightScaleFactor,
-        )
-    }*/
-
-    fun scaleRect(baseSize : Size ,targetSize : Size, rectToScale : RectF) : RectF{
+    private fun scaleRect(baseSize : Size ,targetSize : Size, rectToScale : RectF) : RectF{
 
         val widthScaleFactor = targetSize.width.toFloat()/baseSize.width.toFloat();
         val heightScaleFactor = targetSize.height.toFloat()/baseSize.height.toFloat();
@@ -100,10 +72,10 @@ class TensorFlowDishDetector(
         val newWidth = rectToScale.width() * widthScaleFactor;
         val newHeight = rectToScale.height() * heightScaleFactor;
 
-        val newLeft =  rectToScale.left/rectToScale.width() * newWidth;
+        val newLeft = rectToScale.left/rectToScale.width() * newWidth;
         val newRight = rectToScale.right/rectToScale.width() * newWidth;
-        val newTop = rectToScale.top/rectToScale.height() * newHeight;
-        val newBottom = rectToScale.bottom/rectToScale.height() * newHeight;
+        val newTop = targetSize.height - rectToScale.bottom/rectToScale.height() * newHeight;
+        val newBottom = targetSize.height - rectToScale.top/rectToScale.height() * newHeight;
 
         return RectF(
             newLeft,
@@ -112,24 +84,6 @@ class TensorFlowDishDetector(
             newBottom,
         )
     }
-
-    /*fun scaleRect(baseSize : Size ,targetSize : Size, rectToScale : RectF) : RectF{
-
-        val widthScaleFactor = targetSize.width.toFloat()/baseSize.width.toFloat();
-        val heightScaleFactor = targetSize.height.toFloat()/baseSize.height.toFloat();
-
-        val newLeft = rectToScale.left * widthScaleFactor;
-        val newRight = rectToScale.right * widthScaleFactor;
-        val newTop = rectToScale.top * heightScaleFactor;
-        val newBottom = rectToScale.bottom * heightScaleFactor;
-
-        return RectF(
-            newLeft,
-            newTop,
-            newRight,
-            newBottom,
-        )
-    }*/
 
 
 
@@ -159,16 +113,23 @@ class TensorFlowDishDetector(
                     name = it.categories.maxOf { it.label },
                     certainty = it.categories.maxOf { it.score },
                     box = scaleRect(
-                        imageSize,
+                        rotateDimensions(
+                            imageSize.width,
+                            imageSize.height,
+                            rotation
+                        ),
                         Size(
                             screenWidth.toInt(),
-                            screenHeight.toInt()
+                            screenHeight.toInt(),
                         ),
-                        RectF(
-                            it.boundingBox.left,
-                            it.boundingBox.top,
-                            it.boundingBox.right,
-                            it.boundingBox.bottom,
+                        rotateRectF(
+                            RectF(
+                                it.boundingBox.left,
+                                it.boundingBox.top,
+                                it.boundingBox.right,
+                                it.boundingBox.bottom,
+                            ),
+                            rotation
                         )
                     )
                 )
@@ -185,6 +146,49 @@ class TensorFlowDishDetector(
             Surface.ROTATION_90 -> ImageProcessingOptions.Orientation.TOP_LEFT
             Surface.ROTATION_180 -> ImageProcessingOptions.Orientation.RIGHT_BOTTOM
             else -> ImageProcessingOptions.Orientation.RIGHT_TOP
+        }
+    }
+
+    //Rotates a width and height by a set rotationDegrees (from imageProxy.imageInfo)
+    private fun rotateDimensions(width: Int, height: Int, rotationDegrees: Int): Size {
+        return when (rotationDegrees) {
+            90, 270 -> Size(
+                height,
+                width
+            )
+            180 -> Size(
+                width,
+                height
+            )
+            else -> Size(
+                width,
+                height
+            )
+        }
+    }
+
+    //Rotates rectF coordinates by a set rotationDegrees (from imageProxy.imageInfo)
+    private fun rotateRectF(rect: RectF, rotationDegrees: Int): RectF {
+        return when (rotationDegrees) {
+            90 -> RectF(
+                rect.top,
+                rect.left,
+                rect.bottom,
+                rect.right,
+            )
+            180 -> RectF(
+                rect.right,
+                rect.bottom,
+                rect.left,
+                rect.top,
+            )
+            270 -> RectF(
+                rect.top,
+                rect.left,
+                rect.bottom,
+                rect.right,
+            )
+            else -> rect
         }
     }
 }

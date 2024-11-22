@@ -1,8 +1,8 @@
 package com.example.s501
 
 import android.graphics.Bitmap
-import java.nio.ByteBuffer
+import android.util.Size
 
 interface DishDetector {
-    fun detect(bitmap: Bitmap, rotation : Int) : List<DetectedObject>
+    fun detect(bitmap : Bitmap, rotation : Int, imageSize : Size) : List<DetectedObject>
 }

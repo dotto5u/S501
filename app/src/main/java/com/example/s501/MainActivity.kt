@@ -1,8 +1,11 @@
 package com.example.s501
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.DisplayMetrics
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -32,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,28 +58,38 @@ class MainActivity : ComponentActivity() {
                 var detectedObjects by remember {
                     mutableStateOf(emptyList<DetectedObject>())
                 }
+
+                val cameraPreviewSize = remember { mutableStateOf(Size(0f, 0f)) };
+
                 val analyzer = remember {
-                    DishImageAnalyzer(
-                        detector = TensorFlowDishDetector(
-                            context = applicationContext,
-                        ),
-                        onResult = {
-                            detectedObjects = it
-                        }
-                    )
+                    mutableStateOf<DishImageAnalyzer?>(null)
                 }
                 val controller = remember {
                     LifecycleCameraController(applicationContext).apply {
                         setEnabledUseCases(
                             CameraController.IMAGE_ANALYSIS or
-                            CameraController.IMAGE_CAPTURE
-                        )
-                        setImageAnalysisAnalyzer(
-                            ContextCompat.getMainExecutor(applicationContext),
-                            analyzer
+                                    CameraController.IMAGE_CAPTURE
                         )
                     }
                 }
+
+                LaunchedEffect(cameraPreviewSize) {
+                    if (cameraPreviewSize.value.width > 0 && cameraPreviewSize.value.height > 0) {
+                        analyzer.value = DishImageAnalyzer(
+                            detector = TensorFlowDishDetector(
+                                context = applicationContext,
+                                screenWidth = cameraPreviewSize.value.width,
+                                screenHeight = cameraPreviewSize.value.height,
+                            ),
+                            onResult = { detectedObjects = it }
+                        )
+                        controller.setImageAnalysisAnalyzer(
+                            ContextCompat.getMainExecutor(applicationContext),
+                            analyzer.value!!
+                        )
+                    }
+                }
+
                 Scaffold(modifier = Modifier.fillMaxSize(),
                     bottomBar = {
                         MyBottomNavbar { screen ->
@@ -97,54 +111,37 @@ class MainActivity : ComponentActivity() {
                                 CameraPreview(controller,
                                     Modifier
                                         .fillMaxSize()
-                                        .align(Alignment.TopCenter))
+                                        .align(Alignment.TopCenter)
+                                        .onSizeChanged { size->
+                                            cameraPreviewSize.value = Size(
+                                                size.width.toFloat(),
+                                                size.height.toFloat()
+                                            );
+                                        }
+                                )
 
 
                                 Canvas(
                                     modifier = Modifier.fillMaxSize(),
 
-                                ) {
-                                    //temporary code for debugging
-
-                                    if (detectedObjects != emptyList<DetectedObject>()){
-                                        drawContext.canvas.nativeCanvas.drawText(
-                                            "Yes",
-                                           0f,
-                                            0f,
-                                            android.graphics.Paint().apply {
-                                                color = android.graphics.Color.RED
-                                                textSize = 40f
-                                            }
-                                        )
-                                    }
-                                    else{
-                                        drawContext.canvas.nativeCanvas.drawText(
-                                            "No",
-                                            0f,
-                                            0f,
-                                            android.graphics.Paint().apply {
-                                                color = android.graphics.Color.RED
-                                                textSize = 40f
-                                            }
-                                        )
-                                    }
+                                    ) {
 
                                     for (detectedObject in detectedObjects) {
                                         drawRect(
                                             color = androidx.compose.ui.graphics.Color.Green,
                                             topLeft = Offset(
                                                 detectedObject.box.left,
-                                                detectedObject.box.top
+                                                detectedObject.box.top,
                                             ),
                                             size = Size(
                                                 detectedObject.box.width(),
                                                 detectedObject.box.height()
                                             ),
-                                            style = Stroke(width = 10f),
+                                            style = Stroke(width = 20f),
                                         )
 
                                         drawContext.canvas.nativeCanvas.drawText(
-                                            "${detectedObject.classId}: ${
+                                            "${detectedObject.name}: ${
                                                 "%.2f".format(
                                                     detectedObject.certainty * 100
                                                 )
@@ -153,7 +150,7 @@ class MainActivity : ComponentActivity() {
                                             detectedObject.box.top - 10,
                                             android.graphics.Paint().apply {
                                                 color = android.graphics.Color.RED
-                                                textSize = 40f
+                                                textSize = 80f
                                             }
                                         )
 

@@ -25,6 +25,10 @@ You can then go into the labelImg project
 ```
 cd ./labelImg-master/
 ```
+Make Command
+```
+pyrcc5 -o libs/resources.py resources.qrc
+```
 
 Finally, you can run the software 
 ```

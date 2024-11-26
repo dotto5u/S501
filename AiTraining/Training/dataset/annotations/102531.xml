@@ -1,0 +1,26 @@
+<annotation>
+	<folder>onion_rings</folder>
+	<filename>102531.jpg</filename>
+	<path>D:\Github\S501\AiTraining\Labelling\input\onion_rings\102531.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>384</width>
+		<height>512</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>onion rings</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>63</xmin>
+			<ymin>104</ymin>
+			<xmax>358</xmax>
+			<ymax>390</ymax>
+		</bndbox>
+	</object>
+</annotation>

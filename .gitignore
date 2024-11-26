@@ -14,3 +14,10 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+
+*/.venv/
+.venv/
+
+dataset/images/*
+dataset/annotations/*

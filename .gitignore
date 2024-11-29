@@ -16,5 +16,9 @@
 local.properties
 
 
-.venv/
 __pycache__/
+*/.venv/
+.venv/
+
+dataset/images/*
+dataset/annotations/*

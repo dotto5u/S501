@@ -1,0 +1,1 @@
+this model is an ssd mobilenet V2 320x320 trained on COCO 2017 found on TF2 object detection model zoo

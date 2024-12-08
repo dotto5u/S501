@@ -1,0 +1,20 @@
+item {
+  name: "onion rings"
+  id: 1
+}
+item {
+  name: "beef tartare"
+  id: 2
+}
+item {
+  name: "spaghetti carbonara"
+  id: 3
+}
+item {
+  name: "hamburger"
+  id: 4
+}
+item {
+  name: "caesar salad"
+  id: 5
+}

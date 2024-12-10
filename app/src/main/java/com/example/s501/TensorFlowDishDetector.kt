@@ -2,258 +2,193 @@ package com.example.s501
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Matrix
-import android.graphics.Rect
 import android.graphics.RectF
 import android.util.Log
+import android.util.Size
 import android.view.Surface
-import org.tensorflow.lite.Interpreter
-import kotlin.math.exp
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
+import org.tensorflow.lite.support.image.ops.ResizeOp
 import org.tensorflow.lite.task.core.BaseOptions
 import org.tensorflow.lite.task.core.vision.ImageProcessingOptions
 import org.tensorflow.lite.task.vision.detector.ObjectDetector
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.MappedByteBuffer
-import java.nio.channels.FileChannel
-import java.util.Arrays
+import org.tensorflow.lite.task.vision.detector.ObjectDetector.ObjectDetectorOptions
 
 class TensorFlowDishDetector(
     private val context : Context,
+    private var screenWidth : Float,
+    private var screenHeight : Float,
 ) : DishDetector {
 
-    init {
-        setupInterpreter();
-    }
+    private val modelWantedWidth = 300;
+    private val modelWantedHeight = 300;
 
-    private val modelPath = "yolov2-tiny-test3.tflite";
+    private val maxResults : Int = 1;
 
-    private val numClasses = 80;
+    private val precisionThreshold : Float = 0.4f;
 
-    private lateinit var interpreter : Interpreter;
-    private val inputSize = 416;
-    private val IoUThreshold = 0.5f;
-    val certaintyThreshold = 0.6f;
+    private val modelPath = "SSDMobilenetV1.tflite"
 
-    private fun setupInterpreter(){
-        val options = Interpreter.Options().apply {
-            setNumThreads(2);
-        }
+    private var detector : ObjectDetector? = null
+
+    private val imageProcessor = ImageProcessor
+        .Builder()
+        /*.add(ResizeOp(
+            modelWantedWidth,
+            modelWantedHeight,
+            ResizeOp.ResizeMethod.BILINEAR
+        ))*/
+        .build();
+
+    private fun setupClassifier(){
+        val baseOptions : BaseOptions = BaseOptions.builder()
+            .setNumThreads(2)
+            .build()
+
+        val options = ObjectDetectorOptions.builder()
+            .setBaseOptions(baseOptions)
+            .setMaxResults(maxResults)
+            .setScoreThreshold(precisionThreshold)
+            .build()
 
         try{
-            interpreter = Interpreter(loadModelFile(), options);
-        }
-        catch (e : Exception){
-            e.printStackTrace();
-        }
-    }
-
-    private fun loadModelFile(): MappedByteBuffer {
-        val assetFileDescriptor = context.assets.openFd(modelPath);
-        val fileInputStream = assetFileDescriptor.createInputStream();
-        val fileChannel = fileInputStream.channel;
-        val startOffset = assetFileDescriptor.startOffset;
-        val declaredLength = assetFileDescriptor.declaredLength;
-        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
-    }
-
-    private fun calculateIoU(rectA: RectF, rectB: RectF): Float {
-        //IoU formula : : Overlap/(Area A + Area B - Overlap)
-        val xA = maxOf(rectA.left, rectB.left);
-        val yA = maxOf(rectA.top, rectB.top);
-        val xB = minOf(rectA.right, rectB.right);
-        val yB = minOf(rectA.bottom, rectB.bottom);
-
-        val overlap = maxOf(0f, xB - xA) * maxOf(0f, yB - yA);
-        val areaA = (rectA.right - rectA.left) * (rectA.bottom - rectA.top);
-        val areaB = (rectB.right - rectB.left) * (rectB.bottom - rectB.top);
-        val unionArea = areaA + areaB - overlap;
-
-        if (unionArea == 0f) return 0f;
-        return overlap/unionArea;
-    }
-
-    //Prevents the model from detecting an object multiple times (only keeps the highest certainty)
-    fun nonMaxSuppression(
-        detections: List<DetectedObject>,
-        //IoU is used to check if two boxes overlap. This threshold defines at which level of overlap we start to consider that the same object was detected twice.
-    ): List<DetectedObject> {
-        //Sorts DetectedObjects by certainty
-        var sortedObjects = detections.sortedByDescending { it.certainty }
-        val selectedObjects = mutableListOf<DetectedObject>()
-
-        while (sortedObjects.isNotEmpty()) {
-            //Picks the detected object with the highest certainty
-            val bestDetection = sortedObjects.first()
-            selectedObjects.add(bestDetection)
-            val remainingObjects = mutableListOf<DetectedObject>()
-
-            //Compares this detected area with previous ones
-            for (detectedObject in sortedObjects.drop(1)) {
-                val iou = calculateIoU(bestDetection.box, detectedObject.box)
-                //Filters IoU by the given threshold
-                if (iou < IoUThreshold) {
-                    remainingObjects.add(detectedObject)
-                }
-            }
-
-            //Updates the list with remaining objects after filtering
-            sortedObjects = remainingObjects
-        }
-
-        for (i in selectedObjects){
-            Log.d("Test", i.toString())
-        }
-
-        return selectedObjects
-    }
-
-    private fun processYOLOOutput(outputData: Array<Array<Array<FloatArray>>>): List<DetectedObject> {
-        val results = mutableListOf<DetectedObject>();
-
-        for (i in outputData.indices) {
-            for (j in outputData[i].indices){
-                for (dectectedObjectLogits in outputData[i][j]){
-                    val tempResults = extractDetections(dectectedObjectLogits, certaintyThreshold);
-
-                    //Saving results
-                    for (result in tempResults){
-                        results.add(result);
-                    }
-                }
-            }
-        }
-
-        return nonMaxSuppression(results)
-    }
-
-    private fun extractDetections(detectedObjectLogits: FloatArray, certaintyThreshold: Float): List<DetectedObject> {
-        val results = mutableListOf<DetectedObject>();
-
-        val otherData = FloatArray(5);
-        val classProbabilities = FloatArray(numClasses);
-
-
-        //TODO - Do this cleaner
-        for (i in 0..4){
-            otherData[i] = detectedObjectLogits[i];
-        }
-
-        val confidence = otherData[4];
-
-        for (i in 5..84){
-            classProbabilities[i-5] = detectedObjectLogits[i];
-        }
-
-        val probabilities = softmax(classProbabilities)
-
-        val maxIndex = probabilities.indices.maxByOrNull { probabilities[it] } ?: -1;
-        val certainty = probabilities[maxIndex];
-
-        if (certainty > certaintyThreshold) {
-            val xCenter = otherData[0];
-            val yCenter = otherData[1];
-            val width = otherData[2];
-            val height = otherData[3];
-
-            val box = RectF(
-                xCenter - width / 2,
-                yCenter - height / 2,
-                xCenter + width / 2,
-                yCenter + height / 2,
+            detector = ObjectDetector.createFromFileAndOptions(
+                context,
+                modelPath,
+                options
             )
-
-            Log.e("Confidence", confidence.toString());
-            //If confidence is negative or more than 1, it means it's wrong
-
-            results.add(DetectedObject(maxIndex, certainty * confidence, box))
         }
-
-        return results
-    }
-
-
-    //Function to turn logits into probabilities
-    fun softmax(logits: FloatArray): FloatArray {
-        val expValues = FloatArray(logits.size);
-        val maxLogit = logits.maxOrNull() ?: 0.0f;
-        var sumExpValues = 0.0f;
-
-        for (i in logits.indices) {
-            expValues[i] = exp(logits[i] - maxLogit);
-            sumExpValues += expValues[i];
-        }
-
-        return expValues.map { it / sumExpValues }.toFloatArray(); //Normalize to get probabilities
-    }
-
-
-
-    override fun detect(bitmap: Bitmap, rotation : Int): List<DetectedObject> {
-        if (!::interpreter.isInitialized){
-            setupInterpreter()
-        }
-
-
-        val byteBufferImage = processBitmap(bitmap, rotation)
-
-        val tensorShape = interpreter.getOutputTensor(0).shape();  //returns the tensor shape at index 0 (because our model only has 1 tensor) in the form of an array of ints
-
-        //4D array to receive output data, will need refactoring because currently it isn't automatic, it needs hardcoded size values (which will change when we will add labels to the model)
-        val outputData = Array(1) { Array(13) { Array(13) { FloatArray(425) } } }
-
-        Log.w("Interpreter", "Running inference");
-        try {
-            interpreter.run(byteBufferImage, outputData);
-        } catch (e : Exception){
-            Log.e("Interpreter", "Error occurred during inference: ${e.message}");
+        catch (e : IllegalStateException){
             e.printStackTrace()
-            throw Exception("Error occurred during inference, shutting down");
         }
-        Log.w("Interpreter", "Inference complete.");
-        //Post-process the model output
-        return processYOLOOutput(outputData);
     }
 
-    //Rotates a bitmap using a rotation
-    fun rotateBitmap(bitmap: Bitmap, rotation: Int): Bitmap {
-        val matrix = Matrix()
-        when (rotation) {
-            Surface.ROTATION_90 -> matrix.postRotate(90f);
-            Surface.ROTATION_270 -> matrix.postRotate(270f);
-            Surface.ROTATION_180 -> matrix.postRotate(180f);
-            else -> {}
-        }
-        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true);
+    //Changes a rectF aspectRatio and resizes it from the baseSize to the targetSize
+    private fun scaleRect(baseSize : Size ,targetSize : Size, rectToScale : RectF) : RectF{
+
+        val widthScaleFactor = targetSize.width.toFloat()/baseSize.width.toFloat();
+        val heightScaleFactor = targetSize.height.toFloat()/baseSize.height.toFloat();
+
+        val newWidth = rectToScale.width() * widthScaleFactor;
+        val newHeight = rectToScale.height() * heightScaleFactor;
+
+        val newLeft = rectToScale.left/rectToScale.width() * newWidth;
+        val newRight = rectToScale.right/rectToScale.width() * newWidth;
+        val newTop = targetSize.height - rectToScale.bottom/rectToScale.height() * newHeight;
+        val newBottom = targetSize.height - rectToScale.top/rectToScale.height() * newHeight;
+
+        return RectF(
+            newLeft,
+            newTop,
+            newRight,
+            newBottom,
+        )
     }
 
-    //Rotates the image converted to a bitmap and returns it as a ByteBuffer to be processed my the model
-    private fun processBitmap(bitmap : Bitmap, rotation: Int) : ByteBuffer{
-        val rotatedBitmap = rotateBitmap(bitmap, rotation);
-
-        //Scales the bitmap to the model's awaited dimensions
-        val scaledBitmap = Bitmap.createScaledBitmap(rotatedBitmap, inputSize, inputSize, true);
 
 
-        val inputBuffer = ByteBuffer.allocateDirect(4 * inputSize * inputSize * 3);
-        inputBuffer.order(ByteOrder.nativeOrder());
-
-        val pixels = IntArray(inputSize * inputSize);
-        scaledBitmap.getPixels(pixels, 0, inputSize, 0, 0, inputSize, inputSize);
-
-        for (pixel in pixels) {
-            //Normalizes RGB values
-            val r = (pixel shr 16 and 0xFF) / 255.0f
-            val g = (pixel shr 8 and 0xFF) / 255.0f
-            val b = (pixel and 0xFF) / 255.0f
-            inputBuffer.putFloat(r)
-            inputBuffer.putFloat(g)
-            inputBuffer.putFloat(b)
+    override fun detect(bitmap: Bitmap, rotation: Int, imageSize : Size): List<DetectedObject> {
+        if (detector == null){
+            setupClassifier()
         }
 
-        inputBuffer.rewind()
-        return inputBuffer
+        val tensorFlowImage = imageProcessor.process(
+            TensorImage.fromBitmap(bitmap)
+        );
+
+        val imageProcessingOptions = ImageProcessingOptions.builder()
+            .setOrientation(getOrientationFromRotation(rotation))
+            .build()
+
+        val results = detector?.detect(tensorFlowImage, imageProcessingOptions)
+
+        val tempResults = mutableListOf<DetectedObject>();
+
+        Log.d("Coords", "Base : " + imageSize.width.toString() + "x" + imageSize.height.toString() + "\nTarget : " + screenWidth.toString() + "x" + screenHeight.toString())
+
+        results?.forEach {
+            Log.w("OriginalBoundingBox", it.boundingBox.toString());
+            tempResults.add(
+                DetectedObject(
+                    name = it.categories.maxOf { it.label },
+                    certainty = it.categories.maxOf { it.score },
+                    box = scaleRect(
+                        rotateDimensions(
+                            imageSize.width,
+                            imageSize.height,
+                            rotation
+                        ),
+                        Size(
+                            screenWidth.toInt(),
+                            screenHeight.toInt(),
+                        ),
+                        rotateRectF(
+                            RectF(
+                                it.boundingBox.left,
+                                it.boundingBox.top,
+                                it.boundingBox.right,
+                                it.boundingBox.bottom,
+                            ),
+                            rotation
+                        )
+                    )
+                )
+            )
+            Log.w("ResizedBoundingBox", tempResults.last().box.toString());
+        }
+
+        return tempResults;
+    }
+
+    private fun getOrientationFromRotation(rotation : Int) : ImageProcessingOptions.Orientation{
+        return when(rotation){
+            Surface.ROTATION_270 -> ImageProcessingOptions.Orientation.BOTTOM_RIGHT
+            Surface.ROTATION_90 -> ImageProcessingOptions.Orientation.TOP_LEFT
+            Surface.ROTATION_180 -> ImageProcessingOptions.Orientation.RIGHT_BOTTOM
+            else -> ImageProcessingOptions.Orientation.RIGHT_TOP
+        }
+    }
+
+    //Rotates a width and height by a set rotationDegrees (from imageProxy.imageInfo)
+    private fun rotateDimensions(width: Int, height: Int, rotationDegrees: Int): Size {
+        return when (rotationDegrees) {
+            90, 270 -> Size(
+                height,
+                width
+            )
+            180 -> Size(
+                width,
+                height
+            )
+            else -> Size(
+                width,
+                height
+            )
+        }
+    }
+
+    //Rotates rectF coordinates by a set rotationDegrees (from imageProxy.imageInfo)
+    private fun rotateRectF(rect: RectF, rotationDegrees: Int): RectF {
+        return when (rotationDegrees) {
+            90 -> RectF(
+                rect.top,
+                rect.left,
+                rect.bottom,
+                rect.right,
+            )
+            180 -> RectF(
+                rect.right,
+                rect.bottom,
+                rect.left,
+                rect.top,
+            )
+            270 -> RectF(
+                rect.top,
+                rect.left,
+                rect.bottom,
+                rect.right,
+            )
+            else -> rect
+        }
     }
 }

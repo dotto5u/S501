@@ -1,0 +1,26 @@
+<annotation>
+	<folder>pancakes</folder>
+	<filename>75441.jpg</filename>
+	<path>C:\Users\belma\Documents\sae_501\AiTraining\Labelling\toLabel\pancakes\75441.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>384</width>
+		<height>512</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>pancakes</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>73</xmin>
+			<ymin>199</ymin>
+			<xmax>308</xmax>
+			<ymax>497</ymax>
+		</bndbox>
+	</object>
+</annotation>

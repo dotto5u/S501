@@ -27,7 +27,7 @@ class TensorFlowDishDetector(
 
     private val precisionThreshold : Float = 0.4f;
 
-    private val modelPath = "SSDMobilenetV1.tflite"
+    private val modelPath = "model.tflite"
 
     private var detector : ObjectDetector? = null
 

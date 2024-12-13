@@ -1,0 +1,2 @@
+:: Should be run from Training directory
+python models/research/object_detection/model_main_tf2.py --model_dir="./trained_model" --pipeline_config_path="./modelData/pipeline.config" --num_train_steps=10000

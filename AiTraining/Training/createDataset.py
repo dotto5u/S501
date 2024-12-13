@@ -11,7 +11,7 @@ class datasetCreator:
         self.__dataset_path = './dataset'
 
         #To do - Read this labelMap from the file
-        self.__label_map = {'onion rings': 1, 'beef tartare': 2}
+        self.__label_map = {'onion rings': 1, 'beef tartare': 2, 'spaghetti carbonara' : 3, 'hamburger' : 4, 'caesar salad' : 5}
 
         self.emptyDataset()
 

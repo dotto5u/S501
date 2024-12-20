@@ -1,6 +1,7 @@
 *.iml
 .gradle
 /local.properties
+/.idea/runConfigurations.xml
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
@@ -16,6 +17,7 @@
 local.properties
 
 
+__pycache__/
 */.venv/
 .venv/
 

@@ -1,0 +1,38 @@
+<annotation>
+	<folder>ice_cream</folder>
+	<filename>137146.jpg</filename>
+	<path>C:\Users\belma\Documents\sae_501\AiTraining\Labelling\toLabel\ice_cream\137146.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>512</width>
+		<height>384</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>ice cream</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>64</xmin>
+			<ymin>43</ymin>
+			<xmax>245</xmax>
+			<ymax>189</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>ice cream</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>214</xmin>
+			<ymin>154</ymin>
+			<xmax>434</xmax>
+			<ymax>319</ymax>
+		</bndbox>
+	</object>
+</annotation>

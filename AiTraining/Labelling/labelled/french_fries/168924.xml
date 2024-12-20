@@ -1,0 +1,26 @@
+<annotation>
+	<folder>french_fries</folder>
+	<filename>168924.jpg</filename>
+	<path>C:\Users\belma\Documents\sae_501\AiTraining\Labelling\toLabel\french_fries\168924.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>512</width>
+		<height>512</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>french fries</name>
+		<pose>Unspecified</pose>
+		<truncated>1</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>35</xmin>
+			<ymin>14</ymin>
+			<xmax>501</xmax>
+			<ymax>512</ymax>
+		</bndbox>
+	</object>
+</annotation>

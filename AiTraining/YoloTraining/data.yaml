@@ -1,0 +1,15 @@
+names:
+- onion rings
+- beef tartare
+- spaghetti carbonara
+- hamburger
+- caesar salad
+- french fries
+- ice cream
+- pancakes
+- pizza
+- steak
+nc: 10
+test: D:\Github\S501\AiTraining\YoloTraining\yolov8AI/test/images
+train: D:\Github\S501\AiTraining\YoloTraining\yolov8AI/train/images
+val: D:\Github\S501\AiTraining\YoloTraining\yolov8AI/valid/images

@@ -12,8 +12,6 @@ class datasetCreator:
         self.__dataset_path = './dataset'
         self.__labelmap_path = './labelmap.json'
 
-        print("do something")
-
         self.__label_map = self.readLabelmap()
 
         self.emptyDataset()
@@ -152,19 +150,27 @@ class datasetCreator:
                     tree = ET.parse(file)
                     root = tree.getroot()
 
+                    width = 1
+                    height = 1
+
+                    for obj in root.findall('size'):
+                        width = float(obj.find('width').text)
+                        height = float(obj.find('height').text)
+                        break
+
                     for obj in root.findall('object'):
                         name = obj.find('name').text.replace(" ", "_")
                         
                         bndbox = obj.find('bndbox')
-                        xmin = bndbox.find('xmin').text
-                        ymin = bndbox.find('ymin').text
-                        xmax = bndbox.find('xmax').text
-                        ymax = bndbox.find('ymax').text
+                        xmin = float(bndbox.find('xmin').text)
+                        ymin = float(bndbox.find('ymin').text)
+                        xmax = float(bndbox.find('xmax').text)
+                        ymax = float(bndbox.find('ymax').text)
 
                         classId = self.__label_map[name]
 
                         with open(os.path.join(path, newLabelName), 'w') as writer:
-                            writer.write(f"{classId} {xmin} {ymin} {xmax} {ymax}")
+                            writer.write(f"{classId} {xmin/width} {ymin/height} {xmax/width} {ymax/height}")
 
                         break
                 

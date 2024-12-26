@@ -10,6 +10,6 @@ names:
 - pizza
 - steak
 nc: 10
-test: D:\Github\S501\AiTraining\YoloTraining\yolov8AI/test/images
-train: D:\Github\S501\AiTraining\YoloTraining\yolov8AI/train/images
-val: D:\Github\S501\AiTraining\YoloTraining\yolov8AI/valid/images
+test: C:\Users\Arthur\Documents\GitHub\S501\AiTraining\YoloTraining\dataset\test\images
+train: C:\Users\Arthur\Documents\GitHub\S501\AiTraining\YoloTraining\dataset\train\images
+val: C:\Users\Arthur\Documents\GitHub\S501\AiTraining\YoloTraining\dataset\valid\images

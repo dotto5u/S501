@@ -4,19 +4,22 @@ import glob
 import xml.etree.ElementTree as ET
 import json
 from random import shuffle
+import PIL
 
 class datasetCreator:
 
     def __init__(self) -> None:
+        self.__target_image_size = 512
+
         self.__labelled_data_path = '../Labelling/labelled'
         self.__dataset_path = './dataset'
         self.__labelmap_path = './labelmap.json'
 
         self.__label_map = self.readLabelmap()
 
-        self.emptyDataset()
-
         self.createDatasetDirs()
+
+        self.emptyDataset()
 
         #Copies and edits dataset
         self.exploreLabelledDir()
@@ -50,6 +53,8 @@ class datasetCreator:
         return data
 
     def createDatasetDirs(self):
+        if (not os.path.exists(self.__dataset_path)):
+            os.mkdir(self.__dataset_path)
 
         if (not os.path.exists(os.path.join(self.__dataset_path, "valid"))):
             os.mkdir(os.path.join(self.__dataset_path, "valid"))

@@ -1,0 +1,1 @@
+To use this part, you have to change the path for test, train and valid in data.yaml to your full path to your dataset.

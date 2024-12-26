@@ -3,7 +3,7 @@ import torch
 from ultralytics import YOLO
 import matplotlib.pyplot as plt
 
-model = YOLO('YoloV8.pt')
+model = YOLO('best.pt')
 
 image_path = 'onionRingTest.jpg'
 image = cv2.imread(image_path)

@@ -4,7 +4,7 @@ import glob
 import xml.etree.ElementTree as ET
 import json
 from random import shuffle
-import PIL
+from PIL import Image
 
 class datasetCreator:
 
@@ -24,7 +24,8 @@ class datasetCreator:
         #Copies and edits dataset
         self.exploreLabelledDir()
 
-        self.changeLabelsFormat()
+        #Changing label format is now done while copying it to the dataset
+        #self.changeLabelsFormat()
 
         print("Dataset successfully created.")
 
@@ -87,6 +88,60 @@ class datasetCreator:
                 self.exploreDataDir(currentPath)
 
 
+    def redimensionAndCopyImageAndLabel(self, path, imageName, targetPath):
+        
+        baseImagePath = os.path.join(path, imageName)
+        targetImagePath = os.path.join(targetPath, "images", imageName)
+
+        baseFileName = ((str(imageName).split("."))[0])
+
+        baseLabelPath = os.path.join(path, baseFileName + '.xml')
+        targetLabelPath = os.path.join(targetPath, "labels", baseFileName + '.txt')
+
+        if not os.path.exists(baseImagePath):
+            raise Exception(f"Redimensionning : Original img file doesn't exist : {baseImagePath}")
+        if not os.path.exists(baseLabelPath):
+            raise Exception(f"Redimensionning : Original xml file doesn't exist : {baseLabelPath}")
+
+        #Redimensioning image
+        tempImage = Image.open(baseImagePath)
+
+        originalWidth = tempImage.width
+        originalHeight = tempImage.height
+
+        resizedImage = tempImage.resize((self.__target_image_size, self.__target_image_size))
+        resizedImage.save(targetImagePath)
+
+        widthFactor = self.__target_image_size/originalWidth
+        heightFactor = self.__target_image_size/originalHeight
+
+        #Redimensioning labels
+        with open(baseLabelPath, 'r') as file:
+            tree = ET.parse(file)
+            root = tree.getroot()
+
+            object = tree.find("object")
+
+            name = object.find('name').text.replace(" ", "_")
+
+            boundingBox = object.find("bndbox")
+
+            xmin = float(boundingBox.find("xmin").text) * widthFactor
+            ymin = float(boundingBox.find("ymin").text) * heightFactor
+            xmax = float(boundingBox.find("xmax").text) * widthFactor
+            ymax = float(boundingBox.find("ymax").text) * heightFactor
+
+
+            print(originalWidth)
+            print(boundingBox.find("xmin").text)
+            print(xmin)
+            print("\n\n")
+
+            classId = self.__label_map[name]
+
+            with open((targetLabelPath), 'w') as writer:
+                writer.write(f"{classId} {xmin/self.__target_image_size} {ymin/self.__target_image_size} {xmax/self.__target_image_size} {ymax/self.__target_image_size}")
+
     def exploreDataDir(self, path):
         FilesOrDirs = os.listdir(path)
 
@@ -94,44 +149,20 @@ class datasetCreator:
         test = nbFiles/20
         valid = nbFiles/10
 
-        trainImg, trainLbl, validImg, validLbl, testImg, testLbl = self.chooseValidTestTrainFiles(
+        trainImg, validImg, testImg = self.chooseValidTestTrainFiles(
             allFiles=FilesOrDirs,
             test=test,
             valid=valid
             )
 
         for fileName in trainImg :
-            copyfile(
-                os.path.join(path, fileName),
-                os.path.join(self.__dataset_path, "train", "images", fileName)
-                )
-        for fileName in trainLbl:
-            copyfile(
-                os.path.join(path, fileName),
-                os.path.join(self.__dataset_path, "train", "labels", fileName)
-                )
+            self.redimensionAndCopyImageAndLabel(path, fileName, os.path.join(self.__dataset_path, "train"))
     
         for fileName in testImg:
-            copyfile(
-                os.path.join(path, fileName),
-                os.path.join(self.__dataset_path, "test", "images", fileName)
-                )
-        for fileName in testLbl:
-            copyfile(
-                os.path.join(path, fileName),
-                os.path.join(self.__dataset_path, "test", "labels", fileName)
-                )
+           self.redimensionAndCopyImageAndLabel(path, fileName, os.path.join(self.__dataset_path, "test"))
         
         for fileName in validImg:
-            copyfile(
-                os.path.join(path, fileName),
-                os.path.join(self.__dataset_path, "valid", "images", fileName)
-                )
-        for fileName in validLbl:
-            copyfile(
-                os.path.join(path, fileName),
-                os.path.join(self.__dataset_path, "valid", "labels", fileName)
-                )
+            self.redimensionAndCopyImageAndLabel(path, fileName, os.path.join(self.__dataset_path, "valid"))
 
     def changeLabelsFormat(self):
 
@@ -189,42 +220,20 @@ class datasetCreator:
         validImg = []
         trainImg = []
 
-        testLbl = []
-        validLbl = []
-        trainLbl = []
-
-
         for i in range(len(allFiles)):
             file = allFiles[i]
             if (str(file).endswith(".jpg")):
                 if (file in testImg or file in validImg or file in trainImg):
                     continue
                 else:
-                    xmlFile = str(file).split(".")[0] + ".xml"
+                    
                     if (i <= test):
                         testImg.append(file)
-                        testLbl.append(xmlFile)
                     elif (i <= valid):
                         validImg.append(file)
-                        validLbl.append(xmlFile)
                     else:
                         trainImg.append(file)
-                        validLbl.append(xmlFile)
-            if (str(allFiles[i]).endswith(".xml")):
-                if (allFiles[i] in testLbl or allFiles[i] in validLbl or allFiles[i] in trainLbl):
-                    continue
-                else:
-                    jpgFile = str(file).split(".")[0] + ".jpg"
-                    if (i <= test):
-                        testLbl.append(file)
-                        testImg.append(jpgFile)
-                    elif (i <= valid):
-                        validLbl.append(file)
-                        validImg.append(jpgFile)
-                    else:
-                        trainLbl.append(file)
-                        validImg.append(jpgFile)
 
-        return [trainImg, trainLbl, validImg, validLbl, testImg, testLbl]
+        return [trainImg, validImg, testImg]
 
 datasetCreator()

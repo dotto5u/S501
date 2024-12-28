@@ -131,12 +131,6 @@ class datasetCreator:
             xmax = float(boundingBox.find("xmax").text) * widthFactor
             ymax = float(boundingBox.find("ymax").text) * heightFactor
 
-
-            print(originalWidth)
-            print(boundingBox.find("xmin").text)
-            print(xmin)
-            print("\n\n")
-
             classId = self.__label_map[name]
 
             with open((targetLabelPath), 'w') as writer:

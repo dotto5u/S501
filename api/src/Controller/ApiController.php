@@ -15,7 +15,15 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class ApiController extends AbstractController
 {
-    #[Route('/images/all', name: 'app_images_all', methods: ['GET'])]
+    #[Route('/health', name: 'app_health', methods: ['GET'])]
+    public function health(): JsonResponse
+    {
+        $json = ['Symfony API is currently working'];
+
+        return new JsonResponse($json);
+    }
+
+    #[Route('/image/all', name: 'app_image_all', methods: ['GET'])]
     public function all(ImageRepository $imageRepository): JsonResponse
     {
         $images = $imageRepository->getAll();

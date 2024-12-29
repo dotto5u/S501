@@ -4,8 +4,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class ApiClient {
-    // url à changer en fonction de l'API
-    private val baseUrl = "https://dummyjson.com"
+    private val baseUrl = "http://81.51.168.247/S501/api/public/"
 
     val apiService: ApiService by lazy {
         Retrofit.Builder()

@@ -16,42 +16,42 @@ class ImageFixtures extends Fixture implements DependentFixtureInterface
         $imagesData = [
             [
                 'id' => 1,
-                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.webp',
+                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.png',
                 'categories_ref' => ['category_1', 'category_2'],
             ],
             [
                 'id' => 2,
-                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.webp',
+                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.png',
                 'categories_ref' => ['category_3', 'category_4'],
             ],
             [
                 'id' => 3,
-                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.webp',
+                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.png',
                 'categories_ref' => ['category_5', 'category_6'],
             ],
             [
                 'id' => 4,
-                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.webp',
+                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.png',
                 'categories_ref' => ['category_1', 'category_7'],
             ],
             [
                 'id' => 5,
-                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.webp',
+                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.png',
                 'categories_ref' => ['category_1', 'category_8'],
             ],
             [
                 'id' => 6,
-                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.webp',
+                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.png',
                 'categories_ref' => ['category_1', 'category_2', 'category_4'],
             ],
             [
                 'id' => 7,
-                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.webp',
+                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.png',
                 'categories_ref' => ['category_1', 'category_6'],
             ],
             [
                 'id' => 8,
-                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.webp',
+                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.png',
                 'categories_ref' => ['category_3', 'category_5', 'category_4'],
             ],
         ];

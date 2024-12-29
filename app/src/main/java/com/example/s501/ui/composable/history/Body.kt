@@ -1,6 +1,5 @@
 package com.example.s501.ui.composable.history
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -27,6 +26,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.s501.R
 import com.example.s501.data.model.Image
 import com.example.s501.ui.viewmodel.ImageViewModel
@@ -61,19 +61,17 @@ fun HistoryBody(viewModel: ImageViewModel) {
     }
 }
 
-// TODO implémenter le chargement des images avec Coil
-// TODO adapter / changer la LazyVerticalGrid
-// TODO revoir la façon dont la taille des images est gérée
 @Composable
 fun HistoryImage(image: Image) {
     Row(modifier = Modifier.fillMaxWidth()) {
-        Image(
-            painter = painterResource(R.drawable.clementine), // image par défault pour tester
+        AsyncImage(
+            model = image.url,
             contentDescription = null,
+            error = painterResource(R.drawable.default_image),
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .height(125.dp)
-                .width(150.dp),
-            contentScale = ContentScale.Crop
+                .width(150.dp)
         )
         Spacer(modifier = Modifier.width(15.dp))
         Column {

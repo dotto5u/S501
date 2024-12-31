@@ -1,4 +1,4 @@
-package com.example.s501
+package com.example.s501.data.analysis
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -6,9 +6,9 @@ import android.graphics.RectF
 import android.util.Log
 import android.util.Size
 import android.view.Surface
+import com.example.s501.data.model.DetectedObject
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
-import org.tensorflow.lite.support.image.ops.ResizeOp
 import org.tensorflow.lite.task.core.BaseOptions
 import org.tensorflow.lite.task.core.vision.ImageProcessingOptions
 import org.tensorflow.lite.task.vision.detector.ObjectDetector
@@ -20,12 +20,12 @@ class TensorFlowDishDetector(
     private var screenHeight : Float,
 ) : DishDetector {
 
-    private val modelWantedWidth = 300;
-    private val modelWantedHeight = 300;
+    private val modelWantedWidth = 300
+    private val modelWantedHeight = 300
 
-    private val maxResults : Int = 1;
+    private val maxResults : Int = 1
 
-    private val precisionThreshold : Float = 0.4f;
+    private val precisionThreshold : Float = 0.4f
 
     private val modelPath = "SSDMobilenetV1.tflite"
 
@@ -38,7 +38,7 @@ class TensorFlowDishDetector(
             modelWantedHeight,
             ResizeOp.ResizeMethod.BILINEAR
         ))*/
-        .build();
+        .build()
 
     private fun setupClassifier(){
         val baseOptions : BaseOptions = BaseOptions.builder()
@@ -66,16 +66,16 @@ class TensorFlowDishDetector(
     //Changes a rectF aspectRatio and resizes it from the baseSize to the targetSize
     private fun scaleRect(baseSize : Size ,targetSize : Size, rectToScale : RectF) : RectF{
 
-        val widthScaleFactor = targetSize.width.toFloat()/baseSize.width.toFloat();
-        val heightScaleFactor = targetSize.height.toFloat()/baseSize.height.toFloat();
+        val widthScaleFactor = targetSize.width.toFloat()/baseSize.width.toFloat()
+        val heightScaleFactor = targetSize.height.toFloat()/baseSize.height.toFloat()
 
-        val newWidth = rectToScale.width() * widthScaleFactor;
-        val newHeight = rectToScale.height() * heightScaleFactor;
+        val newWidth = rectToScale.width() * widthScaleFactor
+        val newHeight = rectToScale.height() * heightScaleFactor
 
-        val newLeft = rectToScale.left/rectToScale.width() * newWidth;
-        val newRight = rectToScale.right/rectToScale.width() * newWidth;
-        val newTop = targetSize.height - rectToScale.bottom/rectToScale.height() * newHeight;
-        val newBottom = targetSize.height - rectToScale.top/rectToScale.height() * newHeight;
+        val newLeft = rectToScale.left/rectToScale.width() * newWidth
+        val newRight = rectToScale.right/rectToScale.width() * newWidth
+        val newTop = targetSize.height - rectToScale.bottom/rectToScale.height() * newHeight
+        val newBottom = targetSize.height - rectToScale.top/rectToScale.height() * newHeight
 
         return RectF(
             newLeft,
@@ -94,7 +94,7 @@ class TensorFlowDishDetector(
 
         val tensorFlowImage = imageProcessor.process(
             TensorImage.fromBitmap(bitmap)
-        );
+        )
 
         val imageProcessingOptions = ImageProcessingOptions.builder()
             .setOrientation(getOrientationFromRotation(rotation))
@@ -102,12 +102,12 @@ class TensorFlowDishDetector(
 
         val results = detector?.detect(tensorFlowImage, imageProcessingOptions)
 
-        val tempResults = mutableListOf<DetectedObject>();
+        val tempResults = mutableListOf<DetectedObject>()
 
         Log.d("Coords", "Base : " + imageSize.width.toString() + "x" + imageSize.height.toString() + "\nTarget : " + screenWidth.toString() + "x" + screenHeight.toString())
 
         results?.forEach {
-            Log.w("OriginalBoundingBox", it.boundingBox.toString());
+            Log.w("OriginalBoundingBox", it.boundingBox.toString())
             tempResults.add(
                 DetectedObject(
                     name = it.categories.maxOf { it.label },
@@ -134,10 +134,10 @@ class TensorFlowDishDetector(
                     )
                 )
             )
-            Log.w("ResizedBoundingBox", tempResults.last().box.toString());
+            Log.w("ResizedBoundingBox", tempResults.last().box.toString())
         }
 
-        return tempResults;
+        return tempResults
     }
 
     private fun getOrientationFromRotation(rotation : Int) : ImageProcessingOptions.Orientation{

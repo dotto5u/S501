@@ -1,13 +1,12 @@
-package com.example.s501
+package com.example.s501.data.model
 
 import android.graphics.RectF
 
 data class DetectedObject(
-    val name : String,
-    val certainty : Float,
-    val box : RectF,
-)
-{
+    val name: String,
+    val certainty: Float,
+    val box: RectF,
+) {
     override fun toString(): String {
         return "DetectedObject(name=$name, certainty=$certainty, box=${box.toShortString()})"
     }

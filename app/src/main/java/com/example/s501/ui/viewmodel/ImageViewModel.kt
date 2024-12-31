@@ -44,8 +44,8 @@ class ImageViewModel(private val repository: ImageRepository): ViewModel() {
         }
 
         val categories = listOf(
-            Category("Végétarien"),
-            Category("Italien")
+            Category(id = -1, label = "Végétarien"),
+            Category(id = -1, "Italien")
         )
 
         withContext(Dispatchers.IO) {

@@ -1,4 +1,4 @@
-package com.example.s501
+package com.example.s501.data.analysis
 
 import android.content.Context
 import android.graphics.Bitmap

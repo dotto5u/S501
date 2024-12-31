@@ -1,11 +1,8 @@
 package com.example.s501
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.DisplayMetrics
-import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -21,10 +18,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,32 +29,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.s501.ui.screen.History
+import com.example.s501.ui.composable.history.History
 import com.example.s501.ui.theme.S501Theme
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Text
 import android.content.ContentValues
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
-import android.view.View
 import android.widget.Toast
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.compose.ui.platform.ComposeView
+import com.example.s501.data.analysis.DishImageAnalyzer
+import com.example.s501.data.analysis.TensorFlowDishDetector
+import com.example.s501.data.model.DetectedObject
+import com.example.s501.ui.composable.camera.CameraPreview
+import com.example.s501.ui.composable.BottomNavbar
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -110,7 +104,7 @@ class MainActivity : ComponentActivity() {
 
                 Scaffold(modifier = Modifier.fillMaxSize(),
                     bottomBar = {
-                        MyBottomNavbar { screen ->
+                        BottomNavbar { screen ->
                             currentScreen = screen
                         }
                     }
@@ -134,7 +128,7 @@ class MainActivity : ComponentActivity() {
                                             cameraPreviewSize.value = Size(
                                                 size.width.toFloat(),
                                                 size.height.toFloat()
-                                            );
+                                            )
                                         }
                                 )
 
@@ -146,7 +140,7 @@ class MainActivity : ComponentActivity() {
 
                                     for (detectedObject in detectedObjects) {
                                         drawRect(
-                                            color = androidx.compose.ui.graphics.Color.Green,
+                                            color = Color.Green,
                                             topLeft = Offset(
                                                 detectedObject.box.left,
                                                 detectedObject.box.top,
@@ -278,13 +272,13 @@ class MainActivity : ComponentActivity() {
         }
         val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
 
-        uri?.let { uri ->
+        uri?.let { outputUri ->
             controller.takePicture(
-                ImageCapture.OutputFileOptions.Builder(contentResolver.openOutputStream(uri)!!).build(),
+                ImageCapture.OutputFileOptions.Builder(contentResolver.openOutputStream(outputUri)!!).build(),
                 ContextCompat.getMainExecutor(applicationContext),
                 object : ImageCapture.OnImageSavedCallback {
                     override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                        val capturedImageUri = output.savedUri ?: uri
+                        val capturedImageUri = output.savedUri ?: outputUri
                         val capturedBitmap = BitmapFactory.decodeStream(contentResolver.openInputStream(capturedImageUri))
 
                         // Validate capturedBitmap

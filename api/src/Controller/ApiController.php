@@ -15,7 +15,15 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class ApiController extends AbstractController
 {
-    #[Route('/images/all', name: 'app_images_all', methods: ['GET'])]
+    #[Route('/health', name: 'app_health', methods: ['GET'])]
+    public function health(): JsonResponse
+    {
+        $json = ['Symfony API is currently working'];
+
+        return new JsonResponse($json);
+    }
+
+    #[Route('/image/all', name: 'app_image_all', methods: ['GET'])]
     public function all(ImageRepository $imageRepository): JsonResponse
     {
         $images = $imageRepository->getAll();
@@ -75,20 +83,30 @@ class ApiController extends AbstractController
             $categories[] = $category;
         }
 
-        $uploadDir = $this->getParameter('kernel.project_dir').'/public/uploads';
+        $uploadDir = $this->getParameter('kernel.project_dir').'/public/uploads/images';
+
+        if (!is_dir($uploadDir)) {
+            if (!mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+                return new JsonResponse(['error' => 'Failed to create upload directory'], 500);
+            }
+        }
+
         $newFilename = uniqid().'.'.$uploadedFile->guessExtension();
+
         try {
             $uploadedFile->move($uploadDir, $newFilename);
         } catch (FileException) {
             return new JsonResponse(['error' => 'Failed to upload file'], 500);
         }
 
+        $baseUrl = $this->getParameter('app.base_url');
+        $imageUrl = $baseUrl.'/uploads/images/'.$newFilename;
+
         $image = new Image();
-        $image->setUrl('/uploads/'.$newFilename);
+        $image->setUrl($imageUrl);
         foreach ($categories as $category) {
             $image->addCategory($category);
         }
-
         $entityManager->persist($image);
         $entityManager->flush();
 

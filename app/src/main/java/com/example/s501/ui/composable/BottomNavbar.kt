@@ -1,4 +1,4 @@
-package com.example.s501
+package com.example.s501.ui.composable
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
-fun MyBottomNavbar(onNavigate: (String) -> Unit) {
+fun BottomNavbar(onNavigate: (String) -> Unit) {
     var selectedItem by remember { mutableStateOf("Camera") }
 
     BottomAppBar {
@@ -48,5 +48,5 @@ fun NavbarItem(label: String, isSelected: Boolean, onClick: () -> Unit) {
 @Preview(showBackground = true)
 @Composable
 fun PreviewMyBottomNavbar() {
-    MyBottomNavbar {}
+    BottomNavbar {}
 }

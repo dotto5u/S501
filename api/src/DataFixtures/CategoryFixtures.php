@@ -28,7 +28,7 @@ class CategoryFixtures extends Fixture
             $category->setLabel($data['label']);
 
             $manager->persist($category);
-            $this->addReference(self::CATEGORY_REF_PREFIX . $data['id'], $category);
+            $this->addReference(self::CATEGORY_REF_PREFIX.$data['id'], $category);
         }
 
         $manager->flush();

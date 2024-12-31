@@ -1,4 +1,4 @@
-package com.example.s501
+package com.example.s501.ui.composable.camera
 
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView

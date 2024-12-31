@@ -16,45 +16,45 @@ class ImageFixtures extends Fixture implements DependentFixtureInterface
         $imagesData = [
             [
                 'id' => 1,
-                'url' => 'https://images.unsplash.com/photo-1607116692929-ece4c84a5992',
+                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.png',
                 'categories_ref' => ['category_1', 'category_2'],
             ],
             [
                 'id' => 2,
-                'url' => 'https://images.unsplash.com/photo-1607116692929-ece4c84a5992',
+                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.png',
                 'categories_ref' => ['category_3', 'category_4'],
             ],
             [
                 'id' => 3,
-                'url' => 'https://images.unsplash.com/photo-1607116692929-ece4c84a5992',
+                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.png',
                 'categories_ref' => ['category_5', 'category_6'],
             ],
             [
                 'id' => 4,
-                'url' => 'https://images.unsplash.com/photo-1607116692929-ece4c84a5992',
+                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.png',
                 'categories_ref' => ['category_1', 'category_7'],
             ],
             [
                 'id' => 5,
-                'url' => 'https://images.unsplash.com/photo-1607116692929-ece4c84a5992',
+                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.png',
                 'categories_ref' => ['category_1', 'category_8'],
             ],
             [
                 'id' => 6,
-                'url' => 'https://images.unsplash.com/photo-1607116692929-ece4c84a5992',
+                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.png',
                 'categories_ref' => ['category_1', 'category_2', 'category_4'],
             ],
             [
                 'id' => 7,
-                'url' => 'https://images.unsplash.com/photo-1607116692929-ece4c84a5992',
+                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.png',
                 'categories_ref' => ['category_1', 'category_6'],
             ],
             [
                 'id' => 8,
-                'url' => 'https://images.unsplash.com/photo-1607116692929-ece4c84a5992',
+                'url' => 'http://81.51.168.247/S501/api/public/uploads/images/default.png',
                 'categories_ref' => ['category_3', 'category_5', 'category_4'],
             ],
-        ];                
+        ];
 
         foreach ($imagesData as $data) {
             $image = new Image();
@@ -65,7 +65,7 @@ class ImageFixtures extends Fixture implements DependentFixtureInterface
             }
 
             $manager->persist($image);
-            $this->addReference(self::IMAGE_REF_PREFIX . $data['id'], $image);
+            $this->addReference(self::IMAGE_REF_PREFIX.$data['id'], $image);
         }
 
         $manager->flush();

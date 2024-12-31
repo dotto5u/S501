@@ -2,27 +2,21 @@ package com.example.s501
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.RectF
 import android.util.Log
 import android.util.Size
-import android.view.Surface
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.support.common.FileUtil
+import org.tensorflow.lite.support.common.ops.CastOp
 import org.tensorflow.lite.support.common.ops.NormalizeOp
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
-import org.tensorflow.lite.support.image.ops.ResizeOp
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
-import org.tensorflow.lite.task.core.BaseOptions
-import org.tensorflow.lite.task.core.vision.ImageProcessingOptions
-import org.tensorflow.lite.task.vision.detector.ObjectDetector
-import org.tensorflow.lite.task.vision.detector.ObjectDetector.ObjectDetectorOptions
-import java.io.FileInputStream
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.MappedByteBuffer
-import java.nio.channels.FileChannel
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStream
+import java.io.InputStreamReader
 
 class TensorFlowDishDetector(
     private val context : Context,
@@ -30,180 +24,135 @@ class TensorFlowDishDetector(
     private var screenHeight : Float,
 ) : DishDetector {
 
-    private val modelWantedWidth = 640;
-    private val modelWantedHeight = 640;
-
-    private val maxResults : Int = 1;
-
+    //Detection parameters
+    private val maxResults : Int = 2;
     private val precisionThreshold : Float = 0.4f;
     private val iouThreshold : Float = 0.4f;
 
-    private val modelPath = "YoloV8_base.tflite"
-    private val modelInputShape = intArrayOf(1, 3, 640, 640)
-    private val modelOutputShape = intArrayOf(1, 84, 8400)
+    //File paths
+    private val labelPath = "labelmap.txt";
+    private val modelPath = "YoloV8_base.tflite";
 
-    private var interpreter : Interpreter? = null
+    //Model variables - Do not touch
+    private var modelInputShape : IntArray? = null;
+    private var modelOutputShape : IntArray? = null;
 
+    private val labels = mutableListOf<String>()
+
+    private var interpreter : Interpreter? = null;
+
+    //Image parameters
     private val std = 255.0f;
     private val mean = 0.0f;
     private val imageProcessor = ImageProcessor
         .Builder()
-        .add(ResizeOp(
-            modelWantedWidth,
-            modelWantedHeight,
-            ResizeOp.ResizeMethod.BILINEAR
-        ))
         .add(NormalizeOp(mean, std))
+        .add(CastOp(DataType.FLOAT32))
         .build();
+
+    init {
+        setupInterpreter();
+        readLabels();
+    }
 
     private fun setupInterpreter(){
         try{
             val options = Interpreter.Options();
-            options.setNumThreads(2);
-            interpreter = Interpreter(loadModelFile(context), options)
+            options.setNumThreads(4);
+
+            val model = FileUtil.loadMappedFile(context, modelPath);
+            interpreter = Interpreter(model, options);
+
+            modelInputShape = interpreter?.getInputTensor(0)?.shape();
+            modelOutputShape = interpreter?.getOutputTensor(0)?.shape();
         }
         catch (e : IllegalStateException){
             e.printStackTrace()
         }
     }
 
-    private fun loadModelFile(context: Context): MappedByteBuffer {
-        val assetFileDescriptor = context.assets.openFd(modelPath)
-        val inputStream = FileInputStream(assetFileDescriptor.fileDescriptor)
-        val fileChannel = inputStream.channel
-        val startOffset = assetFileDescriptor.startOffset
-        val declaredLength = assetFileDescriptor.declaredLength
-        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
+    private fun readLabels() {
+        try {
+            val inputStream: InputStream = context.assets.open(labelPath);
+            val reader = BufferedReader(InputStreamReader(inputStream));
+
+            var line: String? = reader.readLine();
+            while (line != null && line != "") {
+                labels.add(line);
+                line = reader.readLine();
+            }
+            reader.close();
+            inputStream.close();
+
+        } catch (e: IOException) {
+            e.printStackTrace();
+        }
     }
-
-    //Changes a rectF aspectRatio and resizes it from the baseSize to the targetSize
-    private fun scaleRect(baseSize : Size ,targetSize : Size, rectToScale : RectF) : RectF{
-
-        val widthScaleFactor = targetSize.width.toFloat()/baseSize.width.toFloat();
-        val heightScaleFactor = targetSize.height.toFloat()/baseSize.height.toFloat();
-
-        val newWidth = rectToScale.width() * widthScaleFactor;
-        val newHeight = rectToScale.height() * heightScaleFactor;
-
-        val newLeft = rectToScale.left/rectToScale.width() * newWidth;
-        val newRight = rectToScale.right/rectToScale.width() * newWidth;
-        val newTop = targetSize.height - rectToScale.bottom/rectToScale.height() * newHeight;
-        val newBottom = targetSize.height - rectToScale.top/rectToScale.height() * newHeight;
-
-        return RectF(
-            newLeft,
-            newTop,
-            newRight,
-            newBottom,
-        )
-    }
-
-
 
     override fun detect(bitmap: Bitmap, rotation: Int, imageSize : Size): List<DetectedObject> {
         if (interpreter == null){
             setupInterpreter();
         }
 
-        val rotatedBitmap = rotateBitmap(bitmap, rotation);
+        if (modelInputShape == null){
+            throw Exception("Model input shape is null after interpreter was setup");
+        }
+        if (modelOutputShape == null){
+            throw Exception("Model output shape is null after interpreter was setup");
+        }
 
-        val tensorFlowImage = imageProcessor.process(
-            TensorImage.fromBitmap(rotatedBitmap)
+        val rotatedBitmap = rotateBitmap(bitmap, rotation);
+        val resizedBitmap = Bitmap.createScaledBitmap(
+            rotatedBitmap,
+            modelInputShape!![1],
+            modelInputShape!![2],
+            false
         );
 
-        val inputBuffer = tensorFlowImage.buffer;
+        val tensorFlowImage = TensorImage(DataType.FLOAT32);
+        tensorFlowImage.load(resizedBitmap);
+        val processedImage = imageProcessor.process(tensorFlowImage);
 
-        val outputBuffer = TensorBuffer.createFixedSize(modelOutputShape, DataType.FLOAT32)
+        val inputBuffer = processedImage.buffer;
+        val outputBuffer = TensorBuffer.createFixedSize(modelOutputShape, DataType.FLOAT32);
 
-        Log.w("Inference", "Running inference")
+        Log.d("Inference", "Running inference")
         try {
-            interpreter?.run(inputBuffer, outputBuffer.buffer.rewind())
+            interpreter?.run(inputBuffer, outputBuffer.buffer)
         }
         catch (e : Exception){
             Log.e("Inference error", "Error occurred during inference")
             e.printStackTrace()
         }
 
-        val results = decodeYOLOOutput(outputBuffer, imageSize)
+        val tempResults = decodeYOLOOutput(outputBuffer.floatArray)
+        Log.e("tempResults", tempResults.toString())
+
+        val results = decodeYOLOOutput(outputBuffer.floatArray)
 
         val finalResults = rescaleResults(
-            results = results,
-            rotation = rotation
+            results = results
         )
 
-        Log.d("res", finalResults.toString())
-
         return finalResults;
-
-        /*val tempResults = mutableListOf<DetectedObject>();
-
-        Log.d("Coords", "Base : " + imageSize.width.toString() + "x" + imageSize.height.toString() + "\nTarget : " + screenWidth.toString() + "x" + screenHeight.toString())
-
-        results?.forEach {
-            Log.w("OriginalBoundingBox", it.boundingBox.toString());
-            tempResults.add(
-                DetectedObject(
-                    name = it.categories.maxOf { it.label },
-                    certainty = it.categories.maxOf { it.score },
-                    box = scaleRect(
-                        rotateDimensions(
-                            imageSize.width,
-                            imageSize.height,
-                            rotation
-                        ),
-                        Size(
-                            screenWidth.toInt(),
-                            screenHeight.toInt(),
-                        ),
-                        rotateRectF(
-                            RectF(
-                                it.boundingBox.left,
-                                it.boundingBox.top,
-                                it.boundingBox.right,
-                                it.boundingBox.bottom,
-                            ),
-                            rotation
-                        )
-                    )
-                )
-            )
-            Log.w("ResizedBoundingBox", tempResults.last().box.toString());
-        }
-
-        return tempResults;*/
     }
 
-    private fun rescaleResults(results : List<DetectedObject>, rotation : Int) : MutableList<DetectedObject>{
+    private fun rescaleResults(results : List<DetectedObject>) : MutableList<DetectedObject>{
         val newResults = mutableListOf<DetectedObject>()
 
-        for (i in results.indices) {
-            val tempBox = results[i].box
-            val temp = DetectedObject(
-                name = results[i].name,
-                certainty = results[i].certainty,
-                box = scaleRect(
-                    rotateDimensions(
-                        modelInputShape[2],
-                        modelInputShape[3],
-                        rotation
-                    ),
-                    Size(
-                        screenWidth.toInt(),
-                        screenHeight.toInt()
-                    ),
-                    rotateRectF(
-                        RectF(
-                            tempBox.left,
-                            tempBox.top,
-                            tempBox.right,
-                            tempBox.bottom
-                        ),
-                        rotation
+        results.forEach {
+            newResults.add(
+                DetectedObject(
+                    name = it.name,
+                    certainty = it.certainty,
+                    box = RectF(
+                        it.box.left*screenWidth,
+                        it.box.top*screenHeight,
+                        it.box.right*screenWidth,
+                        it.box.bottom*screenHeight
                     )
                 )
             )
-
-            newResults.add(temp)
         }
 
         return newResults;
@@ -227,131 +176,79 @@ class TensorFlowDishDetector(
     }
 
 
-    private fun applyNonMaximumSuppression(detections: List<DetectedObject>): List<DetectedObject> {
+    private fun applyNonMaxSuppression(detections: List<DetectedObject>) : MutableList<DetectedObject> {
+        val sortedDetections = detections.sortedByDescending { it.certainty }.toMutableList()
         val filteredDetections = mutableListOf<DetectedObject>()
-        val sortedDetections = detections.sortedByDescending { it.certainty }
 
-        val usedIndices = mutableSetOf<Int>()
-        for (i in sortedDetections.indices) {
-            if (i in usedIndices) continue
+        while(sortedDetections.isNotEmpty()) {
+            val first = sortedDetections.first();
+            filteredDetections.add(first);
+            sortedDetections.remove(first);
 
-            val currentDetection = sortedDetections[i]
-            filteredDetections.add(currentDetection)
-
-            for (j in (i + 1) until sortedDetections.size) {
-                if (j in usedIndices) continue
-                val otherDetection = sortedDetections[j]
-
-                val iou = calculateIoU(currentDetection.box, otherDetection.box)
-                if (iou > iouThreshold) {
-                    usedIndices.add(j)
+            val iterator = sortedDetections.iterator();
+            while (iterator.hasNext()) {
+                val nextDetection = iterator.next();
+                val iou = calculateIoU(first.box, nextDetection.box);
+                if (iou >= iouThreshold) {
+                    iterator.remove();
                 }
             }
         }
 
-        return filteredDetections
+        return filteredDetections;
     }
 
 
-    private fun decodeYOLOOutput(outputBuffer: TensorBuffer, imageSize: Size): List<DetectedObject> {
+    private fun decodeYOLOOutput(array: FloatArray) : List<DetectedObject> {
         val detections = mutableListOf<DetectedObject>()
-        val outputArray = outputBuffer.floatArray
 
-        for (i in outputArray.indices step modelOutputShape[1]) {
+        for (i in 0 until modelOutputShape!![2]) {
+            var maxConf = precisionThreshold;
+            var maxId = -1;
+            var j = 4;
+            var arrayId = i + modelOutputShape!![2] * j
+            while (j < modelOutputShape!![1]){
+                if (array[arrayId] > maxConf) {
+                    maxConf = array[arrayId]
+                    maxId = j - 4;
+                }
+                j+= 1;
+                arrayId += modelOutputShape!![2];
+            }
 
-            val confidence = outputArray[i + 4]
-            val x = (outputArray[i] * std) + mean
-            val y = (outputArray[i + 1] * std) + mean
-            val width = (outputArray[i + 2] * std) + mean
-            val height = (outputArray[i + 3] * std) + mean
+            if (maxConf > precisionThreshold) {
+                val clsName = labels[maxId];
+                val xCenter = array[i];
+                val yCenter = array[i + modelOutputShape!![2]];
 
-            //Log.w("Original pixel values", "X : $x\nY : $y\nWidth : $width\nHeight : $height\n\n")
+                val width = array[i + modelOutputShape!![2] * 2]
+                val height = array[i + modelOutputShape!![2] * 3]
 
-            val rect = RectF(
-                (x - width / 2),
-                (y - height / 2),
-                (x + width / 2),
-                (y + height / 2)
-            )
-            //Log.w("temp",rect.toString());
+                val left = xCenter - (width/2F);
+                val top = yCenter - (height/2F);
+                val right = xCenter + (width/2F);
+                val bottom = yCenter + (height/2F);
+                if (left < 0F || left > 1F) continue;
+                if (top < 0F || top > 1F) continue;
+                if (right < 0F || right > 1F) continue;
+                if (bottom < 0F || bottom > 1F) continue;
 
-            val classId = argMax(outputArray, i + 5, i + modelOutputShape[1]);
-
-            val classCertainty = outputArray[i + classId];
-            val overallCertainty = classCertainty * confidence;
-            if (overallCertainty >= precisionThreshold){
                 detections.add(
                     DetectedObject(
-                        name = "$classId",
-                        certainty = confidence * classCertainty,
-                        box = rect
+                        name = clsName,
+                        certainty = maxConf,
+                        box = RectF(
+                            left,
+                            top,
+                            right,
+                            bottom
+                        )
                     )
                 )
             }
         }
 
-        detections.forEach {
-            if (it.name == "63" || it.name == "62")
-            {
-                Log.d("IDK", it.toString())
-            }
-        }
-
-        //Log.d("detections", detections.toString())
-        return applyNonMaximumSuppression(detections).sortedByDescending { it.certainty }.take(maxResults)
-    }
-
-    private fun argMax(array: FloatArray, start : Int, end: Int): Int {
-        var maxIdx = start
-        for (i in start until end) {
-            if (array[i] > array[maxIdx]) {
-                maxIdx = i
-            }
-        }
-        return maxIdx - start
-    }
-
-    //Rotates a width and height by a set rotationDegrees (from imageProxy.imageInfo)
-    private fun rotateDimensions(width: Int, height: Int, rotationDegrees: Int): Size {
-        return when (rotationDegrees) {
-            90, 270 -> Size(
-                height,
-                width
-            )
-            180 -> Size(
-                width,
-                height
-            )
-            else -> Size(
-                width,
-                height
-            )
-        }
-    }
-
-    //Rotates rectF coordinates by a set rotationDegrees (from imageProxy.imageInfo)
-    private fun rotateRectF(rect: RectF, rotationDegrees: Int): RectF {
-        return when (rotationDegrees) {
-            90 -> RectF(
-                rect.top,
-                rect.left,
-                rect.bottom,
-                rect.right,
-            )
-            180 -> RectF(
-                rect.right,
-                rect.bottom,
-                rect.left,
-                rect.top,
-            )
-            270 -> RectF(
-                rect.top,
-                rect.left,
-                rect.bottom,
-                rect.right,
-            )
-            else -> rect
-        }
+        return applyNonMaxSuppression(detections).sortedByDescending { it.certainty }.take(maxResults);
     }
 
     private fun rotateBitmap(bitmap: Bitmap, rotationDegrees: Int): Bitmap {
@@ -361,5 +258,4 @@ class TensorFlowDishDetector(
             bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true
         )
     }
-
 }

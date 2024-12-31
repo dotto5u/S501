@@ -3,9 +3,9 @@ import torch
 from ultralytics import YOLO
 import matplotlib.pyplot as plt
 
-model = YOLO('best.pt')
+model = YOLO('YoloV8.pt')
 
-image_path = 'onionRingTest.jpg'
+image_path = 'couch.jpg'
 image = cv2.imread(image_path)
 image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 

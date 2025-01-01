@@ -126,9 +126,6 @@ class TensorFlowDishDetector(
             e.printStackTrace()
         }
 
-        val tempResults = decodeYOLOOutput(outputBuffer.floatArray)
-        Log.e("tempResults", tempResults.toString())
-
         val results = decodeYOLOOutput(outputBuffer.floatArray)
 
         val finalResults = rescaleResults(

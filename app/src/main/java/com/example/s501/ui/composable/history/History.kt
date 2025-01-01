@@ -1,5 +1,6 @@
 package com.example.s501.ui.composable.history
 
+import android.widget.Button
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,6 +37,8 @@ fun History() {
         HistoryHeader()
         Spacer(modifier = Modifier.height(25.dp))
         HistoryBody(viewModel = imageViewModel)
+
+        Spacer(modifier = Modifier.height(25.dp))
     }
 }
 

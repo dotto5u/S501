@@ -17,23 +17,27 @@ class ImageRepository(private val apiService: ApiService) {
         return apiService.getAllImages()
     }
 
-    suspend fun uploadImage(file: File, categories: List<Category>) {
-        try {
+    suspend fun uploadImage(file: File, categories: List<Category>): String? {
+        return try {
             val requestBody = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
             val imagePart = MultipartBody.Part.createFormData("image", file.name, requestBody)
 
             val categoriesJson = Gson().toJson(categories)
             val categoriesPart = categoriesJson.toRequestBody("application/json".toMediaTypeOrNull())
 
-            apiService.uploadImage(imagePart, categoriesPart)
-
-            println("Request sent")
+            val responseBody = apiService.uploadImage(imagePart, categoriesPart)
+            val jsonResponse = responseBody.string()
+            println("JSON Response: $jsonResponse")
+            jsonResponse
         } catch (e: HttpException) {
-            println("HttpException : ${e.message ?: "Unknown"}")
+            println("HttpException: ${e.response()?.errorBody()?.string()}")
+            null
         } catch (e: IOException) {
-            println("IOException : ${e.message ?: "Unknown"}")
+            println("IOException: ${e.message ?: "Unknown"}")
+            null
         } catch (e: Exception) {
-            println("Exception : ${e.message ?: "Unknown"}")
+            println("Exception: ${e.message ?: "Unknown"}")
+            null
         }
     }
 }

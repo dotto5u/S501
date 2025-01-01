@@ -33,6 +33,7 @@ class ImageViewModel(private val repository: ImageRepository): ViewModel() {
     }
 
     suspend fun uploadImage(context: Context) {
+        // TODO remplacer les données de test
         val stream = context.resources.openRawResource(R.raw.clementine)
         val file = File(context.cacheDir, "image.jpg")
         withContext(Dispatchers.IO) {

@@ -1,6 +1,6 @@
 from ultralytics import YOLO
 
-model = YOLO("YoloV8.pt")
+model = YOLO("best.pt")
 
 res = model.export(format="tflite")
 

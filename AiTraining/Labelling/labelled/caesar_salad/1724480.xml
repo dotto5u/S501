@@ -1,0 +1,26 @@
+<annotation>
+	<folder>caesar_salad</folder>
+	<filename>1724480.jpg</filename>
+	<path>C:\Users\Utilisateur\OneDrive\Bureau\Info\BUT 3\S501\AiTraining\Labelling\toLabel\caesar_salad\1724480.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>512</width>
+		<height>512</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>caesar salad</name>
+		<pose>Unspecified</pose>
+		<truncated>1</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>23</xmin>
+			<ymin>90</ymin>
+			<xmax>512</xmax>
+			<ymax>512</ymax>
+		</bndbox>
+	</object>
+</annotation>

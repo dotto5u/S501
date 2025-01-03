@@ -1,0 +1,26 @@
+<annotation>
+	<folder>beef_tartare</folder>
+	<filename>856348.jpg</filename>
+	<path>C:\Users\Utilisateur\OneDrive\Bureau\Info\BUT 3\S501\AiTraining\Labelling\toLabel\beef_tartare\856348.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>512</width>
+		<height>342</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>beef tartare</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>101</xmin>
+			<ymin>91</ymin>
+			<xmax>277</xmax>
+			<ymax>225</ymax>
+		</bndbox>
+	</object>
+</annotation>

@@ -1,0 +1,26 @@
+<annotation>
+	<folder>hamburger</folder>
+	<filename>1210060.jpg</filename>
+	<path>C:\Users\Utilisateur\OneDrive\Bureau\Info\BUT 3\S501\AiTraining\Labelling\toLabel\hamburger\1210060.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>512</width>
+		<height>286</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>hamburger</name>
+		<pose>Unspecified</pose>
+		<truncated>1</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>49</xmin>
+			<ymin>9</ymin>
+			<xmax>512</xmax>
+			<ymax>286</ymax>
+		</bndbox>
+	</object>
+</annotation>

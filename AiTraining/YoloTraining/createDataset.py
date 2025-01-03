@@ -99,9 +99,11 @@ class datasetCreator:
         targetLabelPath = os.path.join(targetPath, "labels", baseFileName + '.txt')
 
         if not os.path.exists(baseImagePath):
-            raise Exception(f"Redimensionning : Original img file doesn't exist : {baseImagePath}")
+            print(f"Redimensionning : Original img file doesn't exist : {baseImagePath}")
+            return
         if not os.path.exists(baseLabelPath):
-            raise Exception(f"Redimensionning : Original xml file doesn't exist : {baseLabelPath}")
+            print(f"Redimensionning : Original xml file doesn't exist : {baseLabelPath}")
+            return
 
         #Redimensioning image
         tempImage = Image.open(baseImagePath)

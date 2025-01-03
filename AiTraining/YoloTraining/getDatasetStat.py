@@ -34,7 +34,7 @@ class DatasetStatistics:
             total += value
             print(f"{key} : {value}")
         
-        print("\nTotal : {total}")
+        print(f"\nTotal : {total}")
 
     def initializeDataCounts(self):
         dataCounts = {}

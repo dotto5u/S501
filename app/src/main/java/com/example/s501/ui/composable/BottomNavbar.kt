@@ -12,22 +12,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
-fun BottomNavbar(onNavigate: (String) -> Unit) {
-    var selectedItem by remember { mutableStateOf("Camera") }
-
+fun BottomNavbar(currentScreen: String, onNavigate: (String) -> Unit) {
     BottomAppBar {
         Row(
             modifier = Modifier.fillMaxSize(),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            NavbarItem("History", selectedItem == "History") {
-                selectedItem = "History"
+            NavbarItem("History", currentScreen == "History") {
                 onNavigate("History")
             }
 
-            NavbarItem("Camera", selectedItem == "Camera") {
-                selectedItem = "Camera"
+            NavbarItem("Camera", currentScreen == "Camera") {
                 onNavigate("Camera")
             }
         }
@@ -48,5 +44,5 @@ fun NavbarItem(label: String, isSelected: Boolean, onClick: () -> Unit) {
 @Preview(showBackground = true)
 @Composable
 fun PreviewMyBottomNavbar() {
-    BottomNavbar {}
+    BottomNavbar(currentScreen = "Screen") {}
 }

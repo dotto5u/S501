@@ -16,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
@@ -43,6 +42,7 @@ import androidx.compose.material3.ButtonDefaults
 import android.content.ContentValues
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Paint
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
@@ -51,28 +51,34 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import com.example.s501.data.analysis.DishImageAnalyzer
 import com.example.s501.data.analysis.TensorFlowDishDetector
+import com.example.s501.data.json.JsonFileService
+import com.example.s501.data.model.Category
 import com.example.s501.data.model.DetectedObject
-import com.example.s501.ui.composable.camera.CameraPreview
 import com.example.s501.ui.composable.BottomNavbar
+import com.example.s501.ui.composable.camera.CameraPreview
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
+    private lateinit var jsonFileService: JsonFileService
     private var detectedObjects by mutableStateOf(emptyList<DetectedObject>())
     private var cameraPreviewSize = mutableStateOf(Size(0f, 0f))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         if (!hasRequiredPermissions()) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 0)
         }
+
+        jsonFileService = JsonFileService(applicationContext)
+        jsonFileService.createFileIfNotExists()
+
         enableEdgeToEdge()
+
         setContent {
             S501Theme {
                 var currentScreen by remember { mutableStateOf("Camera") }
-
-
-
                 val analyzer = remember {
                     mutableStateOf<DishImageAnalyzer?>(null)
                 }
@@ -102,102 +108,101 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                Scaffold(modifier = Modifier.fillMaxSize(),
-                    bottomBar = {
-                        BottomNavbar { screen ->
-                            currentScreen = screen
-                        }
-                    }
-                ) { innerPadding ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                    ) {
-                        when (currentScreen) {
-                            "History" -> History()
-                            "Camera" -> Box(
-                                modifier = Modifier.fillMaxSize()
+                when (currentScreen) {
+                    "History" -> History(
+                        currentScreen = currentScreen,
+                        onNavigate = { screen -> currentScreen = screen }
+                    )
+                    "Camera" -> Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        bottomBar = {
+                            BottomNavbar(
+                                currentScreen = currentScreen,
+                                onNavigate = { screen -> currentScreen = screen }
                             )
-                            {
-                                CameraPreview(controller,
-                                    Modifier
-                                        .fillMaxSize()
-                                        .align(Alignment.TopCenter)
-                                        .onSizeChanged { size->
-                                            cameraPreviewSize.value = Size(
-                                                size.width.toFloat(),
-                                                size.height.toFloat()
-                                            )
-                                        }
-                                )
-
-
-                                Canvas(
-                                    modifier = Modifier.fillMaxSize(),
-
-                                    ) {
-
-                                    for (detectedObject in detectedObjects) {
-                                        drawRect(
-                                            color = Color.Green,
-                                            topLeft = Offset(
-                                                detectedObject.box.left,
-                                                detectedObject.box.top,
-                                            ),
-                                            size = Size(
-                                                detectedObject.box.width(),
-                                                detectedObject.box.height()
-                                            ),
-                                            style = Stroke(width = 20f),
+                        }
+                    ) { innerPadding -> Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(innerPadding)
+                        )
+                        {
+                            CameraPreview(controller,
+                                Modifier
+                                    .fillMaxSize()
+                                    .align(Alignment.TopCenter)
+                                    .onSizeChanged { size->
+                                        cameraPreviewSize.value = Size(
+                                            size.width.toFloat(),
+                                            size.height.toFloat()
                                         )
-
-                                        drawContext.canvas.nativeCanvas.drawText(
-                                            "${detectedObject.name}: ${
-                                                "%.2f".format(
-                                                    detectedObject.certainty * 100
-                                                )
-                                            }%",
-                                            detectedObject.box.left,
-                                            detectedObject.box.top - 10,
-                                            android.graphics.Paint().apply {
-                                                color = android.graphics.Color.RED
-                                                textSize = 80f
-                                            }
-                                        )
-
                                     }
-                                }
+                            )
 
+                            Canvas(
+                                modifier = Modifier.fillMaxSize(),
+
+                                ) {
+
+                                for (detectedObject in detectedObjects) {
+                                    drawRect(
+                                        color = Color.Green,
+                                        topLeft = Offset(
+                                            detectedObject.box.left,
+                                            detectedObject.box.top,
+                                        ),
+                                        size = Size(
+                                            detectedObject.box.width(),
+                                            detectedObject.box.height()
+                                        ),
+                                        style = Stroke(width = 20f),
+                                    )
+
+                                    drawContext.canvas.nativeCanvas.drawText(
+                                        "${detectedObject.name}: ${
+                                            "%.2f".format(
+                                                detectedObject.certainty * 100
+                                            )
+                                        }%",
+                                        detectedObject.box.left,
+                                        detectedObject.box.top - 10,
+                                        Paint().apply {
+                                            color = android.graphics.Color.RED
+                                            textSize = 80f
+                                        }
+                                    )
+
+                                }
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(16.dp)
+                            ) {
                                 Box(
                                     modifier = Modifier
-                                        .align(Alignment.BottomCenter)
-                                        .padding(16.dp)
+                                        .size(80.dp)
+                                        .background(Color.Transparent, shape = CircleShape)
+                                        .border(5.dp, Color.White, CircleShape)
+                                        .align(Alignment.Center)
                                 ) {
-                                    Box(
+                                    Button(
+                                        onClick = {
+                                            capturePhotoWithOverlay(controller)
+                                        },
                                         modifier = Modifier
-                                            .size(80.dp)
-                                            .background(Color.Transparent, shape = CircleShape)
-                                            .border(5.dp, Color.White, CircleShape)
-                                            .align(Alignment.Center)
+                                            .fillMaxSize(),
+                                        shape = CircleShape,
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color.Transparent
+                                        )
                                     ) {
-                                        Button(
-                                            onClick = {
-                                                capturePhotoWithOverlay(controller)
-                                            },
-                                            modifier = Modifier
-                                                .fillMaxSize(),
-                                            shape = CircleShape,
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color.Transparent
-                                            )
-                                        ) {
-                                            Text(
-                                                text = "📸",
-                                                color = Color.White,
-                                                fontSize = 24.sp
-                                            )
-                                        }
+                                        Text(
+                                            text = "📸",
+                                            color = Color.White,
+                                            fontSize = 24.sp
+                                        )
                                     }
                                 }
                             }
@@ -220,12 +225,12 @@ class MainActivity : ComponentActivity() {
         val scaleY = photoHeight.toFloat() / cameraPreviewSize.value.height
 
         for (detectedObject in detectedObjects) {
-            val rectPaint = android.graphics.Paint().apply {
+            val rectPaint = Paint().apply {
                 color = android.graphics.Color.GREEN
                 strokeWidth = 5f
-                style = android.graphics.Paint.Style.STROKE
+                style = Paint.Style.STROKE
             }
-            val textPaint = android.graphics.Paint().apply {
+            val textPaint = Paint().apply {
                 color = android.graphics.Color.RED
                 textSize = 40f
             }
@@ -265,14 +270,24 @@ class MainActivity : ComponentActivity() {
 
     private fun capturePhotoWithOverlay(controller: LifecycleCameraController) {
         val fileName = "IMG_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(System.currentTimeMillis())}.jpg"
+
         val contentValues = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
             put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/S501")
         }
+
         val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
 
         uri?.let { outputUri ->
+            val imageId = getImageIdFromUri(outputUri)
+
+            val categories = detectedObjects.mapIndexed { index, detectedObject ->
+                Category(id = index, label = detectedObject.name)
+            }
+
+            jsonFileService.addCategoriesToJsonFile(imageId, categories)
+
             controller.takePicture(
                 ImageCapture.OutputFileOptions.Builder(contentResolver.openOutputStream(outputUri)!!).build(),
                 ContextCompat.getMainExecutor(applicationContext),
@@ -306,6 +321,7 @@ class MainActivity : ComponentActivity() {
             )
         }
     }
+
     private fun saveCombinedImage(combinedBitmap: Bitmap, uri: Uri) {
         val outputStream = contentResolver.openOutputStream(uri)
         if (outputStream != null) {
@@ -319,6 +335,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun getImageIdFromUri(uri: Uri): Long {
+        var imageId: Long = -1
+        val projection = arrayOf(MediaStore.Images.Media._ID)
+        val cursor = contentResolver.query(uri, projection, null, null, null)
 
+        cursor?.use {
+            if (it.moveToFirst()) {
+                imageId = it.getLong(it.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
+            }
+        }
 
+        return imageId
+    }
 }

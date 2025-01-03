@@ -11,7 +11,7 @@ import retrofit2.http.Part
 
 interface ApiService {
     @GET("image/all")
-    suspend fun getAllImages(): List<Image>
+    suspend fun getOnlineImages(): List<Image>
 
     @Multipart
     @POST("image/upload")

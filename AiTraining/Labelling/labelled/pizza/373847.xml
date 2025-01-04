@@ -1,0 +1,26 @@
+<annotation>
+	<folder>pizza</folder>
+	<filename>373847.jpg</filename>
+	<path>D:\Github\S501\AiTraining\Labelling\toLabel\pizza\373847.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>512</width>
+		<height>329</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>pizza</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>33</xmin>
+			<ymin>12</ymin>
+			<xmax>496</xmax>
+			<ymax>313</ymax>
+		</bndbox>
+	</object>
+</annotation>

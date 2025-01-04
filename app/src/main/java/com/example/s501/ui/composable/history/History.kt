@@ -8,11 +8,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.s501.data.json.JsonFileService
@@ -30,9 +30,10 @@ fun History(currentScreen: String, onNavigate: (String) -> Unit) {
     val imageRepository = remember { ImageRepository(context, apiClient.apiService, jsonFileService) }
     val imageViewModel: ImageViewModel = viewModel(factory = ImageViewModelFactory(context.applicationContext as Application, imageRepository))
 
-    DisposableEffect(Unit) {
-        imageViewModel.refreshImages(false)
-        onDispose {}
+    val isLocal = remember { mutableStateOf(true) }
+
+    LaunchedEffect(isLocal.value) {
+        imageViewModel.refreshImages(isLocal.value)
     }
 
     Scaffold(
@@ -50,15 +51,9 @@ fun History(currentScreen: String, onNavigate: (String) -> Unit) {
                 .padding(paddingValues)
                 .padding(24.dp)
         ) {
-            HistoryHeader()
-            Spacer(modifier = Modifier.height(25.dp))
+            HistoryHeader(selectedValue = isLocal)
+            Spacer(modifier = Modifier.height(15.dp))
             HistoryBody(viewModel = imageViewModel)
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewHome() {
-    History(currentScreen = "History", onNavigate = { println("Camera") })
 }

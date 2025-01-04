@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,6 +28,7 @@ import coil.compose.AsyncImage
 import com.example.s501.R
 import com.example.s501.data.model.Image
 import com.example.s501.ui.composable.Message
+import com.example.s501.ui.theme.subtitleColor
 import com.example.s501.ui.viewmodel.ImageViewModel
 import com.example.s501.ui.viewmodel.ImageUiState
 
@@ -47,7 +49,7 @@ fun HistoryBody(viewModel: ImageViewModel) {
                 if (images.isEmpty()) {
                     item {
                         Message(
-                            message = "Il n'y a pas d'images enregistrées",
+                            message = stringResource(R.string.history_body_no_images),
                             color = Color.DarkGray
                         )
                     }
@@ -59,10 +61,11 @@ fun HistoryBody(viewModel: ImageViewModel) {
                 }
             }
             is ImageUiState.Error -> {
-                val errorMessage = (imageUiState as ImageUiState.Error).message
-
                 item {
-                    Message(message = errorMessage, color = Color.Red)
+                    Message(
+                        message = stringResource(R.string.history_body_error_images),
+                        color = Color.DarkGray
+                    )
                 }
             }
         }
@@ -71,6 +74,8 @@ fun HistoryBody(viewModel: ImageViewModel) {
 
 @Composable
 fun HistoryImage(image: Image) {
+    val subtitleColor = subtitleColor()
+
     Row(modifier = Modifier.fillMaxWidth()) {
         AsyncImage(
             model = image.url,
@@ -82,7 +87,13 @@ fun HistoryImage(image: Image) {
                 .width(150.dp)
         )
         Spacer(modifier = Modifier.width(15.dp))
-        Column {
+        Column(modifier = Modifier.padding(vertical = 5.dp)) {
+            Text(
+                text = stringResource(R.string.history_body_detected_objects),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = subtitleColor
+            )
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -97,18 +108,9 @@ fun HistoryImage(image: Image) {
 
                     categories.forEach { category ->
                         Text(
-                            text = category.label,
+                            text = category.label.replaceFirstChar { it.uppercase() },
                             fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black,
-                        )
-                    }
-                    if (image.categories.size > 2) {
-                        Text(
-                            text = "...",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Gray
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }

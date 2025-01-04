@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,7 +31,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.s501.ui.composable.history.History
@@ -196,14 +194,8 @@ class MainActivity : ComponentActivity() {
                                         shape = CircleShape,
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = Color.Transparent
-                                        )
-                                    ) {
-                                        Text(
-                                            text = "📸",
-                                            color = Color.White,
-                                            fontSize = 24.sp
-                                        )
-                                    }
+                                        ),
+                                    ) {}
                                 }
                             }
                         }

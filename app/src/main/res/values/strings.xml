@@ -1,6 +1,10 @@
 <resources>
     <string name="app_name">S501</string>
+    <string name="ellipsis">…</string>
     <string name="history_title">Historique</string>
-    <string name="history_filter_text">Filtrer par :</string>
-    <string name="history_filter_button_text_category">Catégorie</string>
+    <string name="history_filter_pill_local">Locale</string>
+    <string name="history_filter_pill_online">En ligne</string>
+    <string name="history_body_no_images">Il n\'y a pas d\'images enregistrées</string>
+    <string name="history_body_error_images">Impossible de récupérer les images</string>
+    <string name="history_body_detected_objects">"Objets détectées :"</string>
 </resources>

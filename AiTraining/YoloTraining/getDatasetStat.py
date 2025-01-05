@@ -66,57 +66,6 @@ class DatasetStatistics:
             if (os.path.isdir(currentPath)):
                 self.exploreDataDir(currentPath, cls_name)
 
-
-    def redimensionAndCopyImageAndLabel(self, path, imageName, targetPath):
-        
-        baseImagePath = os.path.join(path, imageName)
-        targetImagePath = os.path.join(targetPath, "images", imageName)
-
-        baseFileName = ((str(imageName).split("."))[0])
-
-        baseLabelPath = os.path.join(path, baseFileName + '.xml')
-        targetLabelPath = os.path.join(targetPath, "labels", baseFileName + '.txt')
-
-        if not os.path.exists(baseImagePath):
-            print(f"Redimensionning : Original img file doesn't exist : {baseImagePath}")
-            return
-        if not os.path.exists(baseLabelPath):
-            print(f"Redimensionning : Original xml file doesn't exist : {baseLabelPath}")
-            return
-
-        #Redimensioning image
-        tempImage = Image.open(baseImagePath)
-
-        originalWidth = tempImage.width
-        originalHeight = tempImage.height
-
-        resizedImage = tempImage.resize((self.__target_image_size, self.__target_image_size))
-        resizedImage.save(targetImagePath)
-
-        widthFactor = self.__target_image_size/originalWidth
-        heightFactor = self.__target_image_size/originalHeight
-
-        #Redimensioning labels
-        with open(baseLabelPath, 'r') as file:
-            tree = ET.parse(file)
-            root = tree.getroot()
-
-            object = tree.find("object")
-
-            name = object.find('name').text.replace(" ", "_")
-
-            boundingBox = object.find("bndbox")
-
-            xmin = float(boundingBox.find("xmin").text) * widthFactor
-            ymin = float(boundingBox.find("ymin").text) * heightFactor
-            xmax = float(boundingBox.find("xmax").text) * widthFactor
-            ymax = float(boundingBox.find("ymax").text) * heightFactor
-
-            classId = self.__label_map[name]
-
-            with open((targetLabelPath), 'w') as writer:
-                writer.write(f"{classId} {xmin/self.__target_image_size} {ymin/self.__target_image_size} {xmax/self.__target_image_size} {ymax/self.__target_image_size}")
-
     def exploreDataDir(self, path, cls_name):
         FilesOrDirs = os.listdir(path)
         

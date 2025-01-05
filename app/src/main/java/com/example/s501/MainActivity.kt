@@ -2,13 +2,17 @@ package com.example.s501
 
 import android.Manifest
 import android.content.ContentValues
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.RectF
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,12 +22,14 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -32,9 +38,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.PaintingStyle
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -62,11 +72,19 @@ class MainActivity : ComponentActivity() {
     private var detectedObjects by mutableStateOf(emptyList<DetectedObject>())
     private var cameraPreviewSize = mutableStateOf(Size(0f, 0f))
 
+    private val imageChooseCode = 10;
+
+    private var currentBitmap by mutableStateOf<Bitmap?>(null);
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (!hasRequiredPermissions()) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 0)
+        if (!hasCameraPermission()) {
+            askForCameraPermission();
         }
+        if (!hasStorageReadPermission()){
+            askForStorageReadPermission();
+        }
+
         enableEdgeToEdge()
         setContent {
             S501Theme {
@@ -131,7 +149,8 @@ class MainActivity : ComponentActivity() {
                                         }
                                 )
 
-
+                                chooseFromGalleryButton();
+                                displayImageFromBitmap();
                                 Canvas(
                                     modifier = Modifier.fillMaxSize(),
 
@@ -207,8 +226,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun hasRequiredPermissions(): Boolean {
+    private fun hasCameraPermission(): Boolean {
         return ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+    }
+    private fun hasStorageReadPermission() : Boolean{
+        return ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun createOverlayBitmap(photoWidth: Int, photoHeight: Int): Bitmap {
@@ -270,6 +292,7 @@ class MainActivity : ComponentActivity() {
                 object : ImageCapture.OnImageSavedCallback {
                     override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                         val capturedImageUri = output.savedUri ?: outputUri
+                        Log.d("ShowUri", capturedImageUri.toString())
                         val capturedBitmap = BitmapFactory.decodeStream(contentResolver.openInputStream(capturedImageUri))
 
                         if (capturedBitmap == null) {
@@ -324,6 +347,126 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun askForStorageReadPermission(){
+        ActivityCompat.requestPermissions(this,
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+            1);
 
+    }
+
+    private fun askForCameraPermission(){
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.CAMERA
+            ),
+            0);
+    }
+
+    @Composable
+    fun chooseFromGalleryButton(){
+        Box(modifier = Modifier.fillMaxSize()) {
+            Button(
+                onClick = { chooseImageInGallery() },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(20.dp)
+                    .width(40.dp)
+                    .height(40.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.gallery),
+                    contentDescription = "Gallery Icon",
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+    }
+
+    fun chooseImageInGallery(){
+        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        intent.type = "image/*"
+        startActivityForResult(intent, imageChooseCode)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == imageChooseCode && resultCode == RESULT_OK && data != null) {
+            val imageUri: Uri? = data.data
+
+            imageUri?.let {
+                val bitmap = getBitmapFromUri(it);
+
+                val detector : TensorFlowDishDetector = TensorFlowDishDetector(
+                    context = applicationContext,
+                    bitmap!!.width.toFloat(),
+                    bitmap.height.toFloat()
+                )
+                val bitmapDetections = detector.detect(
+                    bitmap,
+                    0,
+                    android.util.Size(bitmap.width, bitmap.height))
+
+
+                val bitmapCopy = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+                val canvas = Canvas(bitmapCopy)
+
+                val paint = android.graphics.Paint().apply {
+                    color = android.graphics.Color.GREEN
+                    strokeWidth = 2f
+                    style = android.graphics.Paint.Style.STROKE
+                }
+
+                val textPaint = android.graphics.Paint().apply {
+                    color = android.graphics.Color.RED
+                    textSize = 40f
+                    style = android.graphics.Paint.Style.FILL
+                }
+
+
+                for (detection in bitmapDetections){
+                    canvas.drawRect(detection.box, paint);
+
+                    val textX = detection.box.left
+                    val textY = detection.box.top - 10
+                    canvas.drawText("\"${detection.name}: ${
+                        "%.2f".format(
+                            detection.certainty * 100
+                        )
+                    }%\"", textX, textY, textPaint)
+                }
+
+
+                currentBitmap = bitmapCopy;
+            }
+        }
+    }
+
+    @Composable
+    private fun displayImageFromBitmap(){
+        var bitmap = currentBitmap;
+        if (bitmap != null){
+            Log.e("BitmapNotNull", "There should be a bitmap")
+            val imageBitmap = bitmap.asImageBitmap()
+            Image(
+                bitmap = imageBitmap,
+                contentDescription = "Selected Image",
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        else{
+            Log.e("BitmapNull", "Bitmap is null")
+        }
+    }
+
+    private fun getBitmapFromUri(uri: Uri): Bitmap? {
+        return try {
+            val inputStream = contentResolver.openInputStream(uri)
+            BitmapFactory.decodeStream(inputStream)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
 
 }

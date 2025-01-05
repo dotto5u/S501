@@ -84,4 +84,7 @@ dependencies {
     implementation("org.tensorflow:tensorflow-lite-task-vision:+")
     implementation("org.tensorflow:tensorflow-lite-gpu-delegate-plugin:+")
     implementation("org.tensorflow:tensorflow-lite-gpu:+")
+
+    implementation ("androidx.compose.material:material-icons-extended:1.5.1")
+
 }

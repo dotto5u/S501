@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import com.example.s501.data.json.JsonFileService
 import com.example.s501.data.remote.ApiClient
 import com.example.s501.data.repository.ImageRepository
@@ -23,7 +24,7 @@ import com.example.s501.ui.viewmodel.ImageViewModel
 import com.example.s501.ui.viewmodel.ImageViewModelFactory
 
 @Composable
-fun History(currentScreen: String, onNavigate: (String) -> Unit) {
+fun History(navController: NavHostController) {
     val context = LocalContext.current
     val apiClient = remember { ApiClient() }
     val jsonFileService = remember { JsonFileService(context) }
@@ -40,8 +41,8 @@ fun History(currentScreen: String, onNavigate: (String) -> Unit) {
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             BottomNavbar(
-                currentScreen = currentScreen,
-                onNavigate = onNavigate
+                currentScreen = "History",
+                navController = navController
             )
         }
     ) { paddingValues ->
@@ -53,7 +54,7 @@ fun History(currentScreen: String, onNavigate: (String) -> Unit) {
         ) {
             HistoryHeader(selectedValue = isLocal)
             Spacer(modifier = Modifier.height(15.dp))
-            HistoryBody(viewModel = imageViewModel)
+            HistoryBody(viewModel = imageViewModel, navController = navController)
         }
     }
 }

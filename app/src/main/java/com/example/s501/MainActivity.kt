@@ -47,13 +47,23 @@ import android.util.Log
 import android.widget.Toast
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.s501.data.analysis.DishImageAnalyzer
 import com.example.s501.data.analysis.TensorFlowDishDetector
 import com.example.s501.data.json.JsonFileService
 import com.example.s501.data.model.Category
 import com.example.s501.data.model.DetectedObject
+import com.example.s501.data.model.Image
 import com.example.s501.ui.composable.BottomNavbar
 import com.example.s501.ui.composable.camera.CameraPreview
+import com.example.s501.ui.composable.image.ImageDetail
+import com.google.gson.Gson
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -76,7 +86,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             S501Theme {
-                var currentScreen by remember { mutableStateOf("Camera") }
                 val analyzer = remember {
                     mutableStateOf<DishImageAnalyzer?>(null)
                 }
@@ -106,96 +115,112 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                when (currentScreen) {
-                    "History" -> History(
-                        currentScreen = currentScreen,
-                        onNavigate = { screen -> currentScreen = screen }
-                    )
-                    "Camera" -> Scaffold(
-                        modifier = Modifier.fillMaxSize(),
-                        bottomBar = {
-                            BottomNavbar(
-                                currentScreen = currentScreen,
-                                onNavigate = { screen -> currentScreen = screen }
-                            )
+                val navController = rememberNavController()
+
+                NavHost(
+                    navController = navController,
+                    startDestination = "camera_screen",
+                ) {
+                    composable(
+                        "image_detail_screen/{image}",
+                        arguments = listOf(navArgument("image") {
+                            type = NavType.StringType
+                        })
+                    ) { backStackEntry ->
+                        val encodedImageJson = backStackEntry.arguments?.getString("image")
+                        val imageJson = URLDecoder.decode(encodedImageJson, StandardCharsets.UTF_8.toString())
+                        val image = Gson().fromJson(imageJson, Image::class.java)
+
+                        image?.let {
+                            ImageDetail(image = it, onNavigateBack = { navController.popBackStack() })
                         }
-                    ) { innerPadding -> Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(innerPadding)
-                        )
-                        {
-                            CameraPreview(controller,
-                                Modifier
-                                    .fillMaxSize()
-                                    .align(Alignment.TopCenter)
-                                    .onSizeChanged { size->
-                                        cameraPreviewSize.value = Size(
-                                            size.width.toFloat(),
-                                            size.height.toFloat()
-                                        )
-                                    }
-                            )
-
-                            Canvas(
-                                modifier = Modifier.fillMaxSize(),
-
-                                ) {
-
-                                for (detectedObject in detectedObjects) {
-                                    drawRect(
-                                        color = Color.Green,
-                                        topLeft = Offset(
-                                            detectedObject.box.left,
-                                            detectedObject.box.top,
-                                        ),
-                                        size = Size(
-                                            detectedObject.box.width(),
-                                            detectedObject.box.height()
-                                        ),
-                                        style = Stroke(width = 20f),
-                                    )
-
-                                    drawContext.canvas.nativeCanvas.drawText(
-                                        "${detectedObject.name}: ${
-                                            "%.2f".format(
-                                                detectedObject.certainty * 100
-                                            )
-                                        }%",
-                                        detectedObject.box.left,
-                                        detectedObject.box.top - 10,
-                                        Paint().apply {
-                                            color = android.graphics.Color.RED
-                                            textSize = 80f
-                                        }
-                                    )
-
-                                }
+                    }
+                    composable("history_screen") {
+                        History(navController)
+                    }
+                    composable("camera_screen") {
+                        Scaffold(
+                            modifier = Modifier.fillMaxSize(),
+                            bottomBar = {
+                                BottomNavbar(
+                                    currentScreen = "Camera",
+                                    navController = navController
+                                )
                             }
-
+                        ) { innerPadding ->
                             Box(
                                 modifier = Modifier
-                                    .align(Alignment.BottomCenter)
-                                    .padding(16.dp)
+                                    .fillMaxSize()
+                                    .padding(innerPadding)
                             ) {
+                                CameraPreview(controller,
+                                    Modifier
+                                        .fillMaxSize()
+                                        .align(Alignment.TopCenter)
+                                        .onSizeChanged { size->
+                                            cameraPreviewSize.value = Size(
+                                                size.width.toFloat(),
+                                                size.height.toFloat()
+                                            )
+                                        }
+                                )
+
+                                Canvas(modifier = Modifier.fillMaxSize()) {
+                                    for (detectedObject in detectedObjects) {
+                                        drawRect(
+                                            color = Color.Green,
+                                            topLeft = Offset(
+                                                detectedObject.box.left,
+                                                detectedObject.box.top,
+                                            ),
+                                            size = Size(
+                                                detectedObject.box.width(),
+                                                detectedObject.box.height()
+                                            ),
+                                            style = Stroke(width = 20f),
+                                        )
+
+                                        drawContext.canvas.nativeCanvas.drawText(
+                                            "${detectedObject.name}: ${
+                                                "%.2f".format(
+                                                    detectedObject.certainty * 100
+                                                )
+                                            }%",
+                                            detectedObject.box.left,
+                                            detectedObject.box.top - 10,
+                                            Paint().apply {
+                                                color = android.graphics.Color.RED
+                                                textSize = 80f
+                                            }
+                                        )
+
+                                    }
+                                }
+
                                 Box(
                                     modifier = Modifier
-                                        .size(80.dp)
-                                        .background(Color.Transparent, shape = CircleShape)
-                                        .border(5.dp, Color.White, CircleShape)
-                                        .align(Alignment.Center)
+                                        .align(Alignment.BottomCenter)
+                                        .padding(16.dp)
                                 ) {
-                                    Button(
-                                        onClick = {
-                                            capturePhotoWithOverlay(controller)
-                                        },
+                                    Box(
                                         modifier = Modifier
-                                            .fillMaxSize(),
-                                        shape = CircleShape,
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color.Transparent
-                                        ),
-                                    ) {}
+                                            .size(80.dp)
+                                            .background(Color.Transparent, shape = CircleShape)
+                                            .border(5.dp, Color.White, CircleShape)
+                                            .align(Alignment.Center)
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                capturePhotoWithOverlay(controller)
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxSize(),
+                                            shape = CircleShape,
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color.Transparent
+                                            ),
+                                        ) {}
+                                    }
                                 }
                             }
                         }

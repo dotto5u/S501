@@ -41,7 +41,14 @@ fun SkeletonItem() {
                     .background(Color.Gray.copy(alpha = 0.3f), shape = RoundedCornerShape(8.dp))
             )
             Spacer(modifier = Modifier.width(15.dp))
-            Column(modifier = Modifier.padding(top = 4.dp)) {
+            Column(modifier = Modifier.padding(vertical = 10.dp)) {
+                Box(
+                    modifier = Modifier
+                        .height(16.dp)
+                        .fillMaxWidth(0.6f)
+                        .background(Color.Gray.copy(alpha = 0.3f), shape = RoundedCornerShape(4.dp))
+                )
+                Spacer(modifier = Modifier.height(20.dp))
                 Box(
                     modifier = Modifier
                         .height(16.dp)

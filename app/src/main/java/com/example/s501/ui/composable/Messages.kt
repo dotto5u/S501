@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -20,6 +21,7 @@ fun Message(message: String, color: Color = Color.Black) {
         Text(
             modifier = Modifier.padding(16.dp),
             text = message,
+            textAlign = TextAlign.Center,
             fontSize = 18.sp,
             color = color
         )

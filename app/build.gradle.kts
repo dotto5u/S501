@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.camera.extensions)
 
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.okhttp)

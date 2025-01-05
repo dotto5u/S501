@@ -1,5 +1,6 @@
 package com.example.s501.ui.composable.history
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.s501.R
 import com.example.s501.data.model.Image
@@ -31,9 +33,12 @@ import com.example.s501.ui.composable.Message
 import com.example.s501.ui.theme.subtitleColor
 import com.example.s501.ui.viewmodel.ImageViewModel
 import com.example.s501.ui.viewmodel.ImageUiState
+import com.google.gson.Gson
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @Composable
-fun HistoryBody(viewModel: ImageViewModel) {
+fun HistoryBody(viewModel: ImageViewModel, navController: NavHostController) {
     val imageUiState by viewModel.uiState.collectAsState()
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -55,7 +60,7 @@ fun HistoryBody(viewModel: ImageViewModel) {
                     }
                 } else {
                     items(images) { image ->
-                        HistoryImage(image)
+                        HistoryImage(image, navController)
                         Spacer(modifier = Modifier.height(30.dp))
                     }
                 }
@@ -73,18 +78,24 @@ fun HistoryBody(viewModel: ImageViewModel) {
 }
 
 @Composable
-fun HistoryImage(image: Image) {
+fun HistoryImage(image: Image, navController: NavHostController) {
+    val imageJson = Gson().toJson(image)
+    val encodedImageJson = URLEncoder.encode(imageJson, StandardCharsets.UTF_8.toString())
+
     val subtitleColor = subtitleColor()
 
     Row(modifier = Modifier.fillMaxWidth()) {
         AsyncImage(
+            modifier = Modifier
+                .height(125.dp)
+                .width(150.dp)
+                .clickable {
+                navController.navigate("image_detail_screen/$encodedImageJson")
+                },
             model = image.url,
             contentDescription = null,
             error = painterResource(R.drawable.default_image),
             contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .height(125.dp)
-                .width(150.dp)
         )
         Spacer(modifier = Modifier.width(15.dp))
         Column(modifier = Modifier.padding(vertical = 5.dp)) {

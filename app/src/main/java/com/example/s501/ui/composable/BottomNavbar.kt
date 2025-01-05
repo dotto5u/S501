@@ -9,10 +9,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavHostController
 
 @Composable
-fun BottomNavbar(currentScreen: String, onNavigate: (String) -> Unit) {
+fun BottomNavbar(currentScreen: String, navController: NavHostController) {
     BottomAppBar {
         Row(
             modifier = Modifier.fillMaxSize(),
@@ -20,11 +20,11 @@ fun BottomNavbar(currentScreen: String, onNavigate: (String) -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             NavbarItem("History", currentScreen == "History") {
-                onNavigate("History")
+                navController.navigate("history_screen")
             }
 
             NavbarItem("Camera", currentScreen == "Camera") {
-                onNavigate("Camera")
+                navController.navigate("camera_screen")
             }
         }
     }
@@ -39,10 +39,4 @@ fun NavbarItem(label: String, isSelected: Boolean, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .padding(16.dp)
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewMyBottomNavbar() {
-    BottomNavbar(currentScreen = "Screen") {}
 }

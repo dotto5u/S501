@@ -31,25 +31,29 @@ import com.example.s501.R
 import com.example.s501.data.model.Image
 import com.example.s501.ui.composable.Message
 import com.example.s501.ui.theme.subtitleColor
-import com.example.s501.ui.viewmodel.ImageViewModel
-import com.example.s501.ui.viewmodel.ImageUiState
+import com.example.s501.ui.viewmodel.history.HistoryUiState
+import com.example.s501.ui.viewmodel.history.HistoryViewModel
 import com.google.gson.Gson
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 @Composable
-fun HistoryBody(viewModel: ImageViewModel, navController: NavHostController) {
-    val imageUiState by viewModel.uiState.collectAsState()
+fun HistoryBody(
+    isLocal: Boolean,
+    viewModel: HistoryViewModel,
+    navController: NavHostController
+) {
+    val uiState by viewModel.uiState.collectAsState()
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        when (imageUiState) {
-            is ImageUiState.Loading -> {
+        when (uiState) {
+            is HistoryUiState.Loading -> {
                 item {
                     SkeletonLoading(5)
                 }
             }
-            is ImageUiState.Success -> {
-                val images = (imageUiState as ImageUiState.Success).objects
+            is HistoryUiState.Success -> {
+                val images = (uiState as HistoryUiState.Success).objects
 
                 if (images.isEmpty()) {
                     item {
@@ -60,12 +64,12 @@ fun HistoryBody(viewModel: ImageViewModel, navController: NavHostController) {
                     }
                 } else {
                     items(images) { image ->
-                        HistoryImage(image, navController)
+                        HistoryImage(image, isLocal, navController)
                         Spacer(modifier = Modifier.height(30.dp))
                     }
                 }
             }
-            is ImageUiState.Error -> {
+            is HistoryUiState.Error -> {
                 item {
                     Message(
                         message = stringResource(R.string.history_body_error_images),
@@ -78,10 +82,15 @@ fun HistoryBody(viewModel: ImageViewModel, navController: NavHostController) {
 }
 
 @Composable
-fun HistoryImage(image: Image, navController: NavHostController) {
+fun HistoryImage(image: Image, isLocal: Boolean, navController: NavHostController) {
     val imageJson = Gson().toJson(image)
     val encodedImageJson = URLEncoder.encode(imageJson, StandardCharsets.UTF_8.toString())
 
+    val subtitleText = if (image.categories.isEmpty()) {
+        stringResource(R.string.history_body_no_detected_objects)
+    } else {
+        stringResource(R.string.history_body_detected_objects)
+    }
     val subtitleColor = subtitleColor()
 
     Row(modifier = Modifier.fillMaxWidth()) {
@@ -90,17 +99,19 @@ fun HistoryImage(image: Image, navController: NavHostController) {
                 .height(125.dp)
                 .width(150.dp)
                 .clickable {
-                navController.navigate("image_detail_screen/$encodedImageJson")
+                    navController.navigate(
+                        "image_detail_screen/$encodedImageJson/${isLocal}"
+                    )
                 },
             model = image.url,
             contentDescription = null,
-            error = painterResource(R.drawable.default_image),
             contentScale = ContentScale.Crop,
+            error = painterResource(R.drawable.default_image)
         )
         Spacer(modifier = Modifier.width(15.dp))
         Column(modifier = Modifier.padding(vertical = 5.dp)) {
             Text(
-                text = stringResource(R.string.history_body_detected_objects),
+                text = subtitleText,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = subtitleColor
@@ -113,7 +124,7 @@ fun HistoryImage(image: Image, navController: NavHostController) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 14.dp)
+                        .padding(top = 15.dp)
                 ) {
                     val categories = image.categories.take(2)
 
@@ -121,7 +132,7 @@ fun HistoryImage(image: Image, navController: NavHostController) {
                         Text(
                             text = category.label.replaceFirstChar { it.uppercase() },
                             fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Normal,
                         )
                     }
                 }

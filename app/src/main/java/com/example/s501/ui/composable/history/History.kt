@@ -20,8 +20,8 @@ import com.example.s501.data.json.JsonFileService
 import com.example.s501.data.remote.ApiClient
 import com.example.s501.data.repository.ImageRepository
 import com.example.s501.ui.composable.BottomNavbar
-import com.example.s501.ui.viewmodel.ImageViewModel
-import com.example.s501.ui.viewmodel.ImageViewModelFactory
+import com.example.s501.ui.viewmodel.history.HistoryViewModel
+import com.example.s501.ui.viewmodel.history.HistoryViewModelFactory
 
 @Composable
 fun History(navController: NavHostController) {
@@ -29,12 +29,17 @@ fun History(navController: NavHostController) {
     val apiClient = remember { ApiClient() }
     val jsonFileService = remember { JsonFileService(context) }
     val imageRepository = remember { ImageRepository(context, apiClient.apiService, jsonFileService) }
-    val imageViewModel: ImageViewModel = viewModel(factory = ImageViewModelFactory(context.applicationContext as Application, imageRepository))
+    val historyViewModel: HistoryViewModel = viewModel(
+        factory = HistoryViewModelFactory(
+            application = context.applicationContext as Application,
+            repository = imageRepository
+        )
+    )
 
     val isLocal = remember { mutableStateOf(true) }
 
     LaunchedEffect(isLocal.value) {
-        imageViewModel.refreshImages(isLocal.value)
+        historyViewModel.fetchImages(isLocal.value)
     }
 
     Scaffold(
@@ -54,7 +59,11 @@ fun History(navController: NavHostController) {
         ) {
             HistoryHeader(selectedValue = isLocal)
             Spacer(modifier = Modifier.height(15.dp))
-            HistoryBody(viewModel = imageViewModel, navController = navController)
+            HistoryBody(
+                isLocal = isLocal.value,
+                viewModel = historyViewModel,
+                navController = navController
+            )
         }
     }
 }

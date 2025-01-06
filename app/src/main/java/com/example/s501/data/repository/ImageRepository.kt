@@ -4,8 +4,8 @@ import android.content.Context
 import android.provider.MediaStore
 import android.util.Log
 import com.example.s501.data.json.JsonFileService
-import com.example.s501.data.model.Category
 import com.example.s501.data.model.Image
+import com.example.s501.data.model.ImageCategory
 import com.example.s501.data.remote.ApiService
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
@@ -67,30 +67,72 @@ class ImageRepository(
         return apiService.getOnlineImages()
     }
 
-    suspend fun uploadImage(file: File, categories: List<Category>): String? {
+    suspend fun getOnlineImage(imageId: String): Image? {
+        return try {
+            val image = apiService.getOnlineImage(imageId)
+
+            if (image.id != 0 && image.url.isNotEmpty() && image.categories.isNotEmpty()) {
+                image
+            } else {
+                null
+            }
+        } catch (e: HttpException) {
+            Log.e("ImageRepository", "HttpException : HTTP ${e.code()} - ${e.message}")
+            null
+        } catch (e: IOException) {
+            Log.e("ImageRepository", "IOException : ${e.message ?: "Unknown IO error"}")
+            null
+        } catch (e: Exception) {
+            Log.e("ImageRepository", "Exception : ${e.message ?: "Unknown error"}")
+            null
+        }
+    }
+
+    suspend fun uploadImage(file: File, imageCategory: ImageCategory): Boolean {
         return try {
             val requestBody = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
             val imagePart = MultipartBody.Part.createFormData("image", file.name, requestBody)
 
-            val categoriesJson = Gson().toJson(categories)
+            val categoriesJson = Gson().toJson(imageCategory)
             val categoriesPart = categoriesJson.toRequestBody("application/json".toMediaTypeOrNull())
 
             val responseBody = apiService.uploadImage(imagePart, categoriesPart)
             val jsonResponse = responseBody.string()
 
-            Log.d("UploadImage", "API Response : $jsonResponse")
-            jsonResponse
+            Log.d("ImageRepository", "API Response : $jsonResponse")
+            jsonResponse.contains("success")
         } catch (e: HttpException) {
             val errorBody = e.response()?.errorBody()?.string()
 
-            Log.e("UploadImage", "HttpException : HTTP ${e.code()} - ${errorBody ?: "No error body"}")
-            null
+            Log.e("ImageRepository", "HttpException : HTTP ${e.code()} - ${errorBody ?: "No error body"}")
+            false
         } catch (e: IOException) {
-            Log.e("UploadImage", "IOException : ${e.message ?: "Unknown IO error"}")
-            null
+            Log.e("ImageRepository", "IOException : ${e.message ?: "Unknown IO error"}")
+            false
         } catch (e: Exception) {
-            Log.e("UploadImage", "Exception : ${e.message ?: "Unknown error"}")
-            null
+            Log.e("ImageRepository", "Exception : ${e.message ?: "Unknown error"}")
+            false
+        }
+    }
+
+    suspend fun deleteImage(imageId: String): Boolean {
+        return try {
+            val responseBody = apiService.deleteImage(imageId)
+            val jsonResponse = responseBody.string()
+
+            Log.d("ImageRepository", "API Response : $jsonResponse")
+            jsonResponse.contains("success")
+        } catch (e: HttpException) {
+            val errorBody = e.response()?.errorBody()?.string()
+
+            Log.e("ImageRepository", "HttpException : HTTP ${e.code()} - ${errorBody ?: "No error body"}")
+            false
+        } catch (e: IOException) {
+            Log.e("ImageRepository", "IOException : ${e.message ?: "Unknown IO error"}")
+            false
+        } catch (e: Exception) {
+            Log.e("ImageRepository", "Exception : ${e.message ?: "Unknown error"}")
+            false
         }
     }
 }

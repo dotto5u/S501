@@ -122,17 +122,20 @@ class MainActivity : ComponentActivity() {
                     startDestination = "camera_screen",
                 ) {
                     composable(
-                        "image_detail_screen/{image}",
-                        arguments = listOf(navArgument("image") {
-                            type = NavType.StringType
-                        })
+                        "image_detail_screen/{image}/{isLocal}",
+                        arguments = listOf(
+                            navArgument("image") { type = NavType.StringType },
+                            navArgument("isLocal") { type = NavType.BoolType }
+                        )
                     ) { backStackEntry ->
                         val encodedImageJson = backStackEntry.arguments?.getString("image")
                         val imageJson = URLDecoder.decode(encodedImageJson, StandardCharsets.UTF_8.toString())
                         val image = Gson().fromJson(imageJson, Image::class.java)
 
+                        val isLocal = backStackEntry.arguments?.getBoolean("isLocal") ?: true
+
                         image?.let {
-                            ImageDetail(image = it, onNavigateBack = { navController.popBackStack() })
+                            ImageDetail(image = it, isLocal = isLocal, onNavigateBack = { navController.popBackStack() })
                         }
                     }
                     composable("history_screen") {

@@ -1,4 +1,4 @@
-package com.example.s501.ui.viewmodel
+package com.example.s501.ui.viewmodel.image
 
 import android.app.Application
 import androidx.lifecycle.ViewModel

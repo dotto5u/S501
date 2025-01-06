@@ -1,39 +1,32 @@
-package com.example.s501.ui.viewmodel
+package com.example.s501.ui.viewmodel.history
 
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.s501.data.model.Category
 import com.example.s501.data.repository.ImageRepository
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
 import kotlin.coroutines.cancellation.CancellationException
 
-class ImageViewModel(
+class HistoryViewModel(
     application: Application,
     private val repository: ImageRepository
 ): AndroidViewModel(application) {
     private var job: Job? = null
-    private val _uiState = MutableStateFlow<ImageUiState>(ImageUiState.Loading)
-    val uiState: StateFlow<ImageUiState> = _uiState.asStateFlow()
 
-    fun refreshImages(isLocal: Boolean = true) {
-        getAll(isLocal)
-    }
+    private val _uiState = MutableStateFlow<HistoryUiState>(HistoryUiState.Loading)
+    val uiState: StateFlow<HistoryUiState> = _uiState.asStateFlow()
 
-    private fun getAll(isLocal: Boolean) {
+    fun fetchImages(isLocal: Boolean = true) {
         job?.cancel()
 
         job = viewModelScope.launch {
             try {
-                _uiState.value = ImageUiState.Loading
+                _uiState.value = HistoryUiState.Loading
 
                 val result = if (isLocal) {
                     repository.getLocalImages()
@@ -41,20 +34,14 @@ class ImageViewModel(
                     repository.getOnlineImages()
                 }
 
-                _uiState.value = ImageUiState.Success(result)
+                _uiState.value = HistoryUiState.Success(result)
             } catch (e: CancellationException) {
-                Log.d("ViewModel", "Coroutine cancelled")
+                Log.d("HistoryViewModel", "Coroutine cancelled")
                 throw e
             } catch (e: Exception) {
-                _uiState.value = ImageUiState.Error
-                Log.e("ViewModel", e.message ?: "Unknown error")
+                _uiState.value = HistoryUiState.Error
+                Log.e("HistoryViewModel", e.message ?: "Unknown error")
             }
-        }
-    }
-
-    suspend fun uploadImage(file: File, categories: List<Category>) {
-        withContext(Dispatchers.IO) {
-            repository.uploadImage(file, categories)
         }
     }
 }

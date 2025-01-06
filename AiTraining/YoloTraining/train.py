@@ -12,7 +12,7 @@ results = model.train(
     imgsz=512,
     optimizer="AdamW",
     lr0=0.01,
-    weight_decay=0.0005)
+    weight_decay=0.00005)
 
 EndTime = datetime.now()
 print(f"\nStarted at : {StartTime}\nEnded at {EndTime}")

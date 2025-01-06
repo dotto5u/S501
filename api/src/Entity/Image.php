@@ -15,6 +15,9 @@ class Image
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column(type: 'string', unique: false, nullable: false)]
+    private ?string $imageId = null;
+
     #[ORM\Column(length: 255)]
     private ?string $url = null;
 
@@ -32,6 +35,18 @@ class Image
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getImageId(): ?string
+    {
+        return $this->imageId;
+    }
+
+    public function setImageId(string $imageId): static
+    {
+        $this->imageId = $imageId;
+
+        return $this;
     }
 
     public function getUrl(): ?string

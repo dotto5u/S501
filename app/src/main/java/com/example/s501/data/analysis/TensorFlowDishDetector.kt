@@ -31,8 +31,8 @@ class TensorFlowDishDetector(
     private val iouThreshold : Float = 0.4f;
 
     //File paths
-    private val labelPath = "labelmap.txt";
-    private val modelPath = "YoloV8_trained.tflite";
+    private val labelPath = "coco_labelmap.txt";
+    private val modelPath = "YoloV8_base.tflite";
 
     //Model variables - Do not touch
     private var modelInputShape : IntArray? = null;

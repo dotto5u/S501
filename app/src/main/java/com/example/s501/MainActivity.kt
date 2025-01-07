@@ -5,6 +5,7 @@ import android.content.ContentValues
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
@@ -13,8 +14,10 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.ImageProxy
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.compose.foundation.Canvas
@@ -22,8 +25,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -54,14 +60,29 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import okhttp3.RequestBody
+import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.Locale
-
 
 class MainActivity : ComponentActivity() {
     private var detectedObjects by mutableStateOf(emptyList<DetectedObject>())
     private var cameraPreviewSize = mutableStateOf(Size(0f, 0f))
-
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            try {
+                val inputStream: InputStream? = contentResolver.openInputStream(it)
+                val selectedImage = BitmapFactory.decodeStream(inputStream)
+                if (selectedImage != null) {
+                    Log.d("Uri selected image",it.toString())
+                    analyzeImageFromGallery(it)
+                } else {
+                    Toast.makeText(applicationContext, "Erreur lors du chargement de l'image", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(applicationContext, "Erreur lors de l'ouverture de l'image", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (!hasRequiredPermissions()) {
@@ -134,9 +155,7 @@ class MainActivity : ComponentActivity() {
 
                                 Canvas(
                                     modifier = Modifier.fillMaxSize(),
-
-                                    ) {
-
+                                ) {
                                     for (detectedObject in detectedObjects) {
                                         drawRect(
                                             color = Color.Green,
@@ -165,6 +184,29 @@ class MainActivity : ComponentActivity() {
                                             }
                                         )
 
+                                    }
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(12.dp)
+                                ) {
+                                    Button(
+                                        onClick = {
+                                            openGallery()                                        },
+                                        modifier = Modifier.size(80.dp),
+                                        shape = CircleShape,
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color.Transparent
+                                        )
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.AddCircle,
+                                            contentDescription = "Upload Icon",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(100.dp)
+                                        )
                                     }
                                 }
 
@@ -211,13 +253,14 @@ class MainActivity : ComponentActivity() {
         return ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun createOverlayBitmap(photoWidth: Int, photoHeight: Int): Bitmap {
-        val overlayBitmap = Bitmap.createBitmap(photoWidth, photoHeight, Bitmap.Config.ARGB_8888)
+    private fun createOverlayBitmap(bitmap: Bitmap, detectedObjects: List<DetectedObject>): Bitmap {
+        val overlayBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
         val canvas = android.graphics.Canvas(overlayBitmap)
 
-        val scaleX = photoWidth.toFloat() / cameraPreviewSize.value.width
-        val scaleY = photoHeight.toFloat() / cameraPreviewSize.value.height
+        val scaleX = bitmap.width.toFloat() / cameraPreviewSize.value.width
+        val scaleY = bitmap.height.toFloat() / cameraPreviewSize.value.height
 
+        // Draw bounding boxes for each detected object
         for (detectedObject in detectedObjects) {
             val rectPaint = android.graphics.Paint().apply {
                 color = android.graphics.Color.GREEN
@@ -243,6 +286,7 @@ class MainActivity : ComponentActivity() {
 
         return overlayBitmap
     }
+
 
     private fun combineBitmaps(capturedBitmap: Bitmap, overlayBitmap: Bitmap): Bitmap {
         val combinedBitmap = Bitmap.createBitmap(capturedBitmap.width, capturedBitmap.height, capturedBitmap.config)
@@ -277,27 +321,8 @@ class MainActivity : ComponentActivity() {
                             Toast.makeText(applicationContext, "Erreur lors de la capture de l'image", Toast.LENGTH_SHORT).show()
                             return
                         }
-                        val overlayBitmap = createOverlayBitmap(capturedBitmap.width, capturedBitmap.height)
+                        val overlayBitmap = createOverlayBitmap(capturedBitmap, detectedObjects)
                         val combinedBitmap = combineBitmaps(capturedBitmap, overlayBitmap)
-
-                        //TO-DO : Clean data send to API
-                        val apiClient = ApiClient();
-                        val imageRepository = ImageRepository(apiService = apiClient.apiService);
-
-                        val categories = mutableListOf<Category>();
-
-                        for (detection in detectedObjects){
-                            categories.add(
-                                Category(
-                                    id = 0,
-                                    label = detection.name
-                                )
-                            )
-                        }
-                        GlobalScope.launch {
-                            imageRepository.uploadImage(combinedBitmap, categories);
-                        }
-
 
                         //Saving image
                         saveCombinedImage(combinedBitmap, capturedImageUri)
@@ -324,6 +349,43 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun openGallery() {
+        pickImageLauncher.launch("image/*")
+    }
 
+    private fun analyzeImageFromGallery(uri: Uri) {
+        val inputStream = contentResolver.openInputStream(uri)
+        inputStream?.use { stream ->
+            val bitmap = BitmapFactory.decodeStream(stream)
+            if (bitmap != null) {
 
+                val overlayBitmap = createOverlayBitmap(bitmap, detectedObjects)
+                val combinedBitmap = combineBitmaps(bitmap, overlayBitmap)
+                Log.d("Detected Object : ", detectedObjects.toString())
+
+                saveCombinedImageToGallery(combinedBitmap)
+            } else {
+                Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show()
+            }
+        } ?: Toast.makeText(this, "Failed to open image", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun saveCombinedImageToGallery(combinedBitmap: Bitmap) {
+        val fileName = "IMG_${System.currentTimeMillis()}.jpg"
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/S501")
+        }
+        val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+
+        uri?.let { outputUri ->
+            val outputStream = contentResolver.openOutputStream(outputUri)
+            outputStream?.use {
+                combinedBitmap.compress(Bitmap.CompressFormat.JPEG, 70, it)
+                it.close()
+                Toast.makeText(applicationContext, "Image saved with overlay", Toast.LENGTH_SHORT).show()
+            }
+        } ?: Toast.makeText(applicationContext, "Failed to save image", Toast.LENGTH_SHORT).show()
+    }
 }

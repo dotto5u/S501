@@ -8,7 +8,7 @@ print(StartTime)
 
 results = model.train(
     data="data.yaml",
-    epochs=1,
+    epochs=120,
     imgsz=512,
     optimizer="AdamW",
     lr0=0.01,

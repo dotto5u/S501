@@ -1,6 +1,16 @@
 <resources>
     <string name="app_name">S501</string>
     <string name="history_title">Historique</string>
-    <string name="history_filter_text">Filtrer par :</string>
-    <string name="history_filter_button_text_category">Catégorie</string>
+    <string name="history_filter_pill_local">Locale</string>
+    <string name="history_filter_pill_online">En ligne</string>
+    <string name="history_body_no_images">Il n\'y a pas d\'images enregistrées</string>
+    <string name="history_body_error_images">Impossible de récupérer les images</string>
+    <string name="history_body_no_detected_objects">Aucun objet détecté</string>
+    <string name="history_body_detected_objects">Objets détectées :</string>
+    <string name="history_image_detail_sync">Synchroniser</string>
+    <string name="history_image_detail_sync_success">L\'image a été synchronisée en ligne avec succès</string>
+    <string name="history_image_detail_sync_fail">L\'image n\'a pas pu être synchronisée</string>
+    <string name="history_image_detail_unsync">Désynchroniser</string>
+    <string name="history_image_detail_unsync_success">Image désynchronisée avec succès</string>
+    <string name="history_image_detail_unsync_fail">Échec de la désynchronisation de l\'image</string>
 </resources>

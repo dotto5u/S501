@@ -23,6 +23,29 @@ class ApiController extends AbstractController
         return new JsonResponse($json);
     }
 
+    #[Route('/image/{image_id}/get', name: 'app_image_get', methods: ['GET'])]
+    public function get(string $image_id, ImageRepository $imageRepository): JsonResponse
+    {
+        $image = $imageRepository->findOneBy(['imageId' => $image_id]);
+
+        if (!$image) {
+            return new JsonResponse(null);
+        }
+
+        $json = [
+            'id' => $image->getId(),
+            'url' => $image->getUrl(),
+            'categories' => array_map(function ($category) {
+                return [
+                    'id' => $category->getId(),
+                    'label' => $category->getLabel(),
+                ];
+            }, $image->getCategories()->toArray()),
+        ];
+
+        return new JsonResponse($json);
+    }
+
     #[Route('/image/all', name: 'app_image_all', methods: ['GET'])]
     public function all(ImageRepository $imageRepository): JsonResponse
     {
@@ -49,67 +72,112 @@ class ApiController extends AbstractController
     }
 
     #[Route('/image/upload', name: 'app_image_upload', methods: ['POST'])]
-    public function upload(Request $request, EntityManagerInterface $entityManager, CategoryRepository $categoryRepository): JsonResponse {
+    public function upload(Request $request, EntityManagerInterface $entityManager, CategoryRepository $categoryRepository, ImageRepository $imageRepository): JsonResponse {
         $uploadedFile = $request->files->get('image');
-
+    
         if (!$uploadedFile || !$uploadedFile->isValid()) {
             return new JsonResponse(['error' => 'Invalid file upload'], 400);
         }
-
-        $categoriesData = $request->request->get('categories');
-        if (!$categoriesData) {
-            return new JsonResponse(['error' => 'Categories are required'], 400);
+    
+        $imageCategoryData = $request->request->get('imageCategory');
+    
+        if (!$imageCategoryData) {
+            return new JsonResponse(['error' => 'Image category data is required'], 400);
         }
-
-        $categoriesArray = json_decode($categoriesData, true);
+    
+        $imageCategoryArray = json_decode($imageCategoryData, true);
+    
+        if (!is_array($imageCategoryArray) || !isset($imageCategoryArray['imageId']) || !isset($imageCategoryArray['categories'])) {
+            return new JsonResponse(['error' => 'Invalid image category format'], 400);
+        }
+    
+        $imageId = $imageCategoryArray['imageId'];
+        $categoriesArray = $imageCategoryArray['categories'];
+    
         if (!is_array($categoriesArray)) {
             return new JsonResponse(['error' => 'Invalid categories format'], 400);
         }
-
+    
         $categories = [];
+
         foreach ($categoriesArray as $categoryData) {
             if (!isset($categoryData['label'])) {
                 continue;
             }
-
+    
             $label = $categoryData['label'];
             $category = $categoryRepository->findOneBy(['label' => $label]);
-
+    
             if (!$category) {
                 $category = new Category();
                 $category->setLabel($label);
                 $entityManager->persist($category);
             }
+    
             $categories[] = $category;
         }
-
-        $uploadDir = $this->getParameter('kernel.project_dir').'/public/uploads/images';
+    
+        $uploadDir = $this->getParameter('upload_directory');
 
         if (!is_dir($uploadDir)) {
             if (!mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
                 return new JsonResponse(['error' => 'Failed to create upload directory'], 500);
             }
         }
-
-        $newFilename = uniqid().'.'.$uploadedFile->guessExtension();
-
+    
+        $newFilename = bin2hex(random_bytes(16)).'.'.$uploadedFile->guessExtension();
+    
         try {
             $uploadedFile->move($uploadDir, $newFilename);
         } catch (FileException) {
             return new JsonResponse(['error' => 'Failed to upload file'], 500);
         }
+    
+        $uploadUrl = $this->getParameter('upload_url');
+        $imageUrl = $uploadUrl.'/'.$newFilename;
+    
+        $image = $imageRepository->findOneBy(['imageId' => $imageId]);
 
-        $baseUrl = $this->getParameter('app.base_url');
-        $imageUrl = $baseUrl.'/uploads/images/'.$newFilename;
+        if ($image) {
+            return new JsonResponse(['error' => 'This file is already uploaded'], 500);
+        }
 
         $image = new Image();
+        $image->setImageId($imageId);
         $image->setUrl($imageUrl);
+    
         foreach ($categories as $category) {
             $image->addCategory($category);
         }
+    
         $entityManager->persist($image);
         $entityManager->flush();
-
+    
         return new JsonResponse(['success' => 'Image uploaded successfully']);
+    }
+
+    #[Route('/image/{image_id}/delete', name: 'app_image_delete', methods: ['DELETE'])]
+    public function delete(string $image_id, ImageRepository $imageRepository, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $image = $imageRepository->findOneBy(['imageId' => $image_id]);
+
+        if (!$image) {
+            return new JsonResponse(['error' => 'Image not found'], 404);
+        }
+
+        $uploadDir = $this->getParameter('upload_directory');
+        $imageFilename = basename(parse_url($image->getUrl(), PHP_URL_PATH));
+        $imagePath = $uploadDir.'/'.$imageFilename;
+
+        if (file_exists($imagePath)) {
+            if (!unlink($imagePath)) {
+                return new JsonResponse(['error' => 'Failed to delete image file'], 500);
+            }
+        }
+
+        $entityManager->remove($image);
+        $entityManager->flush();
+
+        return new JsonResponse(['success' => 'Image deleted successfully']);
     }
 }

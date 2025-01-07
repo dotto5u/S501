@@ -1,23 +1,12 @@
 package com.example.s501
 
 import android.Manifest
-import android.content.ContentValues
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.drawable.Icon
-import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
-import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.compose.foundation.Canvas
@@ -28,11 +17,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -42,29 +36,44 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.s501.data.analysis.DishImageAnalyzer
-import com.example.s501.data.analysis.TensorFlowDishDetector
-import com.example.s501.data.model.Category
-import com.example.s501.data.model.DetectedObject
-import com.example.s501.data.remote.ApiClient
-import com.example.s501.data.remote.ApiService
-import com.example.s501.data.repository.ImageRepository
 import com.example.s501.ui.composable.BottomNavbar
 import com.example.s501.ui.composable.camera.CameraPreview
 import com.example.s501.ui.composable.history.History
 import com.example.s501.ui.theme.S501Theme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import okhttp3.RequestBody
 import java.io.InputStream
+import androidx.compose.material3.ButtonDefaults
+import android.content.ContentValues
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Paint
+import android.net.Uri
+import android.provider.MediaStore
+import android.util.Log
+import android.widget.Toast
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.s501.data.analysis.DishImageAnalyzer
+import com.example.s501.data.analysis.TensorFlowDishDetector
+import com.example.s501.data.json.JsonFileService
+import com.example.s501.data.model.Category
+import com.example.s501.data.model.DetectedObject
+import com.example.s501.data.model.Image
+import com.example.s501.ui.composable.image.ImageDetail
+import com.google.gson.Gson
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
+    private lateinit var jsonFileService: JsonFileService
     private var detectedObjects by mutableStateOf(emptyList<DetectedObject>())
     private var cameraPreviewSize = mutableStateOf(Size(0f, 0f))
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -85,14 +94,18 @@ class MainActivity : ComponentActivity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         if (!hasRequiredPermissions()) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 0)
         }
+
+        jsonFileService = JsonFileService(applicationContext)
+        jsonFileService.createFileIfNotExists()
+
         enableEdgeToEdge()
+
         setContent {
             S501Theme {
-                var currentScreen by remember { mutableStateOf("Camera") }
-
                 val analyzer = remember {
                     mutableStateOf<DishImageAnalyzer?>(null)
                 }
@@ -122,24 +135,47 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                Scaffold(modifier = Modifier.fillMaxSize(),
-                    bottomBar = {
-                        BottomNavbar { screen ->
-                            currentScreen = screen
+                val navController = rememberNavController()
+
+                NavHost(
+                    navController = navController,
+                    startDestination = "camera_screen",
+                ) {
+                    composable(
+                        "image_detail_screen/{image}/{isLocal}",
+                        arguments = listOf(
+                            navArgument("image") { type = NavType.StringType },
+                            navArgument("isLocal") { type = NavType.BoolType }
+                        )
+                    ) { backStackEntry ->
+                        val encodedImageJson = backStackEntry.arguments?.getString("image")
+                        val imageJson = URLDecoder.decode(encodedImageJson, StandardCharsets.UTF_8.toString())
+                        val image = Gson().fromJson(imageJson, Image::class.java)
+
+                        val isLocal = backStackEntry.arguments?.getBoolean("isLocal") ?: true
+
+                        image?.let {
+                            ImageDetail(image = it, isLocal = isLocal, onNavigateBack = { navController.popBackStack() })
                         }
                     }
-                ) { innerPadding ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                    ) {
-                        when (currentScreen) {
-                            "History" -> History()
-                            "Camera" -> Box(
-                                modifier = Modifier.fillMaxSize()
-                            )
-                            {
+                    composable("history_screen") {
+                        History(navController)
+                    }
+                    composable("camera_screen") {
+                        Scaffold(
+                            modifier = Modifier.fillMaxSize(),
+                            bottomBar = {
+                                BottomNavbar(
+                                    currentScreen = "Camera",
+                                    navController = navController
+                                )
+                            }
+                        ) { innerPadding ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(innerPadding)
+                            ) {
                                 CameraPreview(controller,
                                     Modifier
                                         .fillMaxSize()
@@ -152,10 +188,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                 )
 
-
-                                Canvas(
-                                    modifier = Modifier.fillMaxSize(),
-                                ) {
+                                Canvas(modifier = Modifier.fillMaxSize()) {
                                     for (detectedObject in detectedObjects) {
                                         drawRect(
                                             color = Color.Green,
@@ -178,8 +211,8 @@ class MainActivity : ComponentActivity() {
                                             }%",
                                             detectedObject.box.left,
                                             detectedObject.box.top - 10,
-                                            android.graphics.Paint().apply {
-                                                color = android.graphics.Color.GREEN
+                                            Paint().apply {
+                                                color = android.graphics.Color.RED
                                                 textSize = 80f
                                             }
                                         )
@@ -231,14 +264,8 @@ class MainActivity : ComponentActivity() {
                                             shape = CircleShape,
                                             colors = ButtonDefaults.buttonColors(
                                                 containerColor = Color.Transparent
-                                            )
-                                        ) {
-                                            Text(
-                                                text = "",
-                                                color = Color.White,
-                                                fontSize = 24.sp
-                                            )
-                                        }
+                                            ),
+                                        ) {}
                                     }
                                 }
                             }
@@ -262,12 +289,12 @@ class MainActivity : ComponentActivity() {
 
         // Draw bounding boxes for each detected object
         for (detectedObject in detectedObjects) {
-            val rectPaint = android.graphics.Paint().apply {
+            val rectPaint = Paint().apply {
                 color = android.graphics.Color.GREEN
                 strokeWidth = 5f
-                style = android.graphics.Paint.Style.STROKE
+                style = Paint.Style.STROKE
             }
-            val textPaint = android.graphics.Paint().apply {
+            val textPaint = Paint().apply {
                 color = android.graphics.Color.RED
                 textSize = 40f
             }
@@ -300,14 +327,24 @@ class MainActivity : ComponentActivity() {
 
     private fun capturePhotoWithOverlay(controller: LifecycleCameraController) {
         val fileName = "IMG_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(System.currentTimeMillis())}.jpg"
+
         val contentValues = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
             put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/S501")
         }
+
         val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
 
         uri?.let { outputUri ->
+            val imageId = getImageIdFromUri(outputUri)
+
+            val categories = detectedObjects.mapIndexed { index, detectedObject ->
+                Category(id = index, label = detectedObject.name)
+            }
+
+            jsonFileService.addCategoriesToJsonFile(imageId, categories)
+
             controller.takePicture(
                 ImageCapture.OutputFileOptions.Builder(contentResolver.openOutputStream(outputUri)!!).build(),
                 ContextCompat.getMainExecutor(applicationContext),
@@ -377,15 +414,31 @@ class MainActivity : ComponentActivity() {
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
             put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/S501")
         }
-        val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+        val uri =
+            contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
 
         uri?.let { outputUri ->
             val outputStream = contentResolver.openOutputStream(outputUri)
             outputStream?.use {
                 combinedBitmap.compress(Bitmap.CompressFormat.JPEG, 70, it)
                 it.close()
-                Toast.makeText(applicationContext, "Image saved with overlay", Toast.LENGTH_SHORT).show()
+                Toast.makeText(applicationContext, "Image saved with overlay", Toast.LENGTH_SHORT)
+                    .show()
             }
         } ?: Toast.makeText(applicationContext, "Failed to save image", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun getImageIdFromUri(uri: Uri): Long {
+        var imageId: Long = -1
+        val projection = arrayOf(MediaStore.Images.Media._ID)
+        val cursor = contentResolver.query(uri, projection, null, null, null)
+
+        cursor?.use {
+            if (it.moveToFirst()) {
+                imageId = it.getLong(it.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
+            }
+        }
+
+        return imageId
     }
 }

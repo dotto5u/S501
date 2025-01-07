@@ -186,6 +186,7 @@ fun ImageDetailObject(category: Category) {
             text = category.label.replaceFirstChar { it.uppercase() },
             fontSize = 14.sp,
             fontWeight = FontWeight.Normal,
+            color = Color.Black
         )
     }
 }

@@ -8,9 +8,9 @@
     <string name="history_body_no_detected_objects">Aucun objet détecté</string>
     <string name="history_body_detected_objects">Objets détectées :</string>
     <string name="history_image_detail_sync">Synchroniser</string>
-    <string name="history_image_detail_sync_success">L\'image a été synchronisée en ligne avec succès</string>
+    <string name="history_image_detail_sync_success">Image synchronisée avec succès !</string>
     <string name="history_image_detail_sync_fail">L\'image n\'a pas pu être synchronisée</string>
     <string name="history_image_detail_unsync">Désynchroniser</string>
-    <string name="history_image_detail_unsync_success">Image désynchronisée avec succès</string>
+    <string name="history_image_detail_unsync_success">Image désynchronisée avec succès !</string>
     <string name="history_image_detail_unsync_fail">Échec de la désynchronisation de l\'image</string>
 </resources>

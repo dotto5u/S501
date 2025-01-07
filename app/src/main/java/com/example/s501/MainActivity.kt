@@ -54,6 +54,8 @@ import android.util.Log
 import android.widget.Toast
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -140,6 +142,10 @@ class MainActivity : ComponentActivity() {
                 NavHost(
                     navController = navController,
                     startDestination = "camera_screen",
+                    enterTransition = { EnterTransition.None },
+                    exitTransition = { ExitTransition.None },
+                    popEnterTransition = { EnterTransition.None },
+                    popExitTransition = { ExitTransition.None },
                 ) {
                     composable(
                         "image_detail_screen/{image}/{isLocal}",
@@ -363,11 +369,11 @@ class MainActivity : ComponentActivity() {
 
                         //Saving image
                         saveCombinedImage(combinedBitmap, capturedImageUri)
-                        Toast.makeText(applicationContext, "Photo enregistrée avec overlay!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(applicationContext, "Photo enregistrée avec succès !", Toast.LENGTH_SHORT).show()
                     }
 
                     override fun onError(exception: ImageCaptureException) {
-                        Toast.makeText(applicationContext, "Erreur lors de l'enregistrement!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(applicationContext, "Erreur lors de l'enregistrement de l'image", Toast.LENGTH_SHORT).show()
                     }
                 }
             )
@@ -381,7 +387,7 @@ class MainActivity : ComponentActivity() {
             outputStream.close()
             Log.d("Save", "Image saved to $uri")
         } else {
-            Toast.makeText(applicationContext, "Erreur lors de l'enregistrement de l'image!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(applicationContext, "Erreur lors de l'enregistrement de l'image", Toast.LENGTH_SHORT).show()
             Log.e("Save", "Failed to obtain output stream for URI: $uri")
         }
     }

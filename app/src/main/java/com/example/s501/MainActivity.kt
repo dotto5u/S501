@@ -219,34 +219,12 @@ class MainActivity : ComponentActivity() {
                                             }%",
                                             detectedObject.box.left,
                                             detectedObject.box.top - 10,
-                                            Paint().apply {
+                                            android.graphics.Paint().apply {
                                                 color = android.graphics.Color.RED
                                                 textSize = 80f
                                             }
                                         )
 
-                                    }
-                                }
-
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .padding(12.dp)
-                                ) {
-                                    Button(
-                                        onClick = {openGallery()},
-                                        modifier = Modifier.size(80.dp),
-                                        shape = CircleShape,
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color.Transparent
-                                        )
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.AddCircle,
-                                            contentDescription = "Upload Icon",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(100.dp)
-                                        )
                                     }
                                 }
 
@@ -290,14 +268,13 @@ class MainActivity : ComponentActivity() {
         return ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun createOverlayBitmap(bitmap: Bitmap, detectedObjects: List<DetectedObject>): Bitmap {
-        val overlayBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+    private fun createOverlayBitmap(photoWidth: Int, photoHeight: Int): Bitmap {
+        val overlayBitmap = Bitmap.createBitmap(photoWidth, photoHeight, Bitmap.Config.ARGB_8888)
         val canvas = android.graphics.Canvas(overlayBitmap)
 
-        val scaleX = bitmap.width.toFloat() / cameraPreviewSize.value.width
-        val scaleY = bitmap.height.toFloat() / cameraPreviewSize.value.height
+        val scaleX = photoWidth.toFloat() / cameraPreviewSize.value.width
+        val scaleY = photoHeight.toFloat() / cameraPreviewSize.value.height
 
-        // Draw bounding boxes for each detected object
         for (detectedObject in detectedObjects) {
             val rectPaint = android.graphics.Paint().apply {
                 color = android.graphics.Color.GREEN
@@ -321,7 +298,7 @@ class MainActivity : ComponentActivity() {
             )
         }
 
-        return overlayBitmap
+        return overlayBitmap;
     }
 
 

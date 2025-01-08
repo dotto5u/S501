@@ -59,16 +59,6 @@ import com.example.s501.ui.composable.BottomNavbar
 import com.example.s501.ui.composable.camera.CameraPreview
 import com.example.s501.ui.composable.history.History
 import com.example.s501.ui.theme.S501Theme
-import java.io.InputStream
-import androidx.compose.material3.ButtonDefaults
-import android.content.ContentValues
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Paint
-import android.net.Uri
-import android.provider.MediaStore
-import android.util.Log
-import android.widget.Toast
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.compose.animation.EnterTransition
@@ -309,7 +299,7 @@ class MainActivity : ComponentActivity() {
 
         // Draw bounding boxes for each detected object
         for (detectedObject in detectedObjects) {
-            val rectPaint = Paint().apply {
+            val rectPaint = android.graphics.Paint().apply {
                 color = android.graphics.Color.GREEN
                 strokeWidth = 20f
                 style = android.graphics.Paint.Style.STROKE
@@ -543,17 +533,6 @@ class MainActivity : ComponentActivity() {
         return Bitmap.createBitmap(
             bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true
         )
-    }
-
-                val overlayBitmap = createOverlayBitmap(bitmap, detectedObjects)
-                val combinedBitmap = combineBitmaps(bitmap, overlayBitmap)
-                Log.d("Detected Object : ", detectedObjects.toString())
-
-                saveCombinedImageToGallery(combinedBitmap)
-            } else {
-                Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show()
-            }
-        } ?: Toast.makeText(this, "Failed to open image", Toast.LENGTH_SHORT).show()
     }
 
     private fun saveCombinedImageToGallery(combinedBitmap: Bitmap) {

@@ -420,15 +420,18 @@ class MainActivity : ComponentActivity() {
             Button(
                 onClick = { chooseImageInGallery() },
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(20.dp)
-                    .width(40.dp)
-                    .height(40.dp)
+                    .align(Alignment.BottomEnd)
+                    .padding(25.dp),
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent
+                )
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.gallery),
-                    contentDescription = "Gallery Icon",
-                    modifier = Modifier.fillMaxSize()
+                    imageVector = Icons.Default.AddCircle,
+                    contentDescription = "Upload Icon",
+                    tint = Color.White,
+                    modifier = Modifier.size(50.dp)
                 )
             }
         }
@@ -445,6 +448,7 @@ class MainActivity : ComponentActivity() {
 
         if (requestCode == imageChooseCode && resultCode == RESULT_OK && data != null) {
             val imageUri: Uri? = data.data
+            Log.d("ImportedImageUri", imageUri.toString())
 
             imageUri?.let {
                 val bitmap = getBitmapFromUri(it);
@@ -459,6 +463,12 @@ class MainActivity : ComponentActivity() {
                     0,
                     android.util.Size(bitmap.width, bitmap.height))
 
+                //Sauvegarde des catégories en local
+                val imageId = getImageIdFromUri(imageUri)
+                val categories = bitmapDetections.mapIndexed { index, detectedObject ->
+                    Category(id = index, label = detectedObject.name)
+                }
+                jsonFileService.addCategoriesToJsonFile(imageId, categories)
 
                 val bitmapCopy = bitmap.copy(Bitmap.Config.ARGB_8888, true)
                 val canvas = Canvas(bitmapCopy)

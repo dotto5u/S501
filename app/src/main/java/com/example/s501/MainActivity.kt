@@ -27,6 +27,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -372,15 +374,18 @@ class MainActivity : ComponentActivity() {
             Button(
                 onClick = { chooseImageInGallery() },
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(20.dp)
-                    .width(40.dp)
-                    .height(40.dp)
+                    .align(Alignment.BottomEnd)
+                    .padding(25.dp),
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent
+                )
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.gallery),
-                    contentDescription = "Gallery Icon",
-                    modifier = Modifier.fillMaxSize()
+                    imageVector = Icons.Default.AddCircle,
+                    contentDescription = "Upload Icon",
+                    tint = Color.White,
+                    modifier = Modifier.size(50.dp)
                 )
             }
         }

@@ -74,8 +74,6 @@ class MainActivity : ComponentActivity() {
 
     private val imageChooseCode = 10;
 
-    private var currentBitmap by mutableStateOf<Bitmap?>(null);
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (!hasCameraPermission()) {
@@ -150,7 +148,7 @@ class MainActivity : ComponentActivity() {
                                 )
 
                                 chooseFromGalleryButton();
-                                displayImageFromBitmap();
+
                                 Canvas(
                                     modifier = Modifier.fillMaxSize(),
 
@@ -243,12 +241,12 @@ class MainActivity : ComponentActivity() {
         for (detectedObject in detectedObjects) {
             val rectPaint = android.graphics.Paint().apply {
                 color = android.graphics.Color.GREEN
-                strokeWidth = 5f
+                strokeWidth = 20f
                 style = android.graphics.Paint.Style.STROKE
             }
             val textPaint = android.graphics.Paint().apply {
-                color = android.graphics.Color.RED
-                textSize = 40f
+                color = android.graphics.Color.GREEN
+                textSize = 80f
             }
             val scaledLeft = detectedObject.box.left * scaleX
             val scaledTop = detectedObject.box.top * scaleY
@@ -270,6 +268,7 @@ class MainActivity : ComponentActivity() {
         val combinedBitmap = Bitmap.createBitmap(capturedBitmap.width, capturedBitmap.height, capturedBitmap.config)
 
         val canvas = android.graphics.Canvas(combinedBitmap)
+
         canvas.drawBitmap(capturedBitmap, 0f, 0f, null)
         canvas.drawBitmap(overlayBitmap, 0f, 0f, null)
 
@@ -300,30 +299,14 @@ class MainActivity : ComponentActivity() {
                             Toast.makeText(applicationContext, "Erreur lors de la capture de l'image", Toast.LENGTH_SHORT).show()
                             return
                         }
-                        val overlayBitmap = createOverlayBitmap(capturedBitmap.width, capturedBitmap.height)
-                        val combinedBitmap = combineBitmaps(capturedBitmap, overlayBitmap)
+                        val rotatedBitmap = rotateBitmap(capturedBitmap, 90);
 
-                        //TO-DO : Clean data send to API
-                        val apiClient = ApiClient();
-                        val imageRepository = ImageRepository(apiService = apiClient.apiService);
-
-                        val categories = mutableListOf<Category>();
-
-                        for (detection in detectedObjects){
-                            categories.add(
-                                Category(
-                                    id = 0,
-                                    label = detection.name
-                                )
-                            )
-                        }
-                        GlobalScope.launch {
-                            imageRepository.uploadImage(combinedBitmap, categories);
-                        }
+                        val overlayBitmap = createOverlayBitmap(rotatedBitmap.width, rotatedBitmap.height)
+                        val combinedBitmap = combineBitmaps(rotatedBitmap, overlayBitmap)
 
 
                         //Saving image
-                        saveCombinedImage(combinedBitmap, capturedImageUri)
+                        saveCapturedImage(combinedBitmap, capturedImageUri)
                         Toast.makeText(applicationContext, "Photo enregistrée avec overlay!", Toast.LENGTH_SHORT).show()
                     }
 
@@ -335,7 +318,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun saveCombinedImage(combinedBitmap: Bitmap, uri: Uri) {
+    private fun saveCapturedImage(combinedBitmap: Bitmap, uri: Uri) {
         val outputStream = contentResolver.openOutputStream(uri)
         if (outputStream != null) {
             combinedBitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
@@ -345,6 +328,27 @@ class MainActivity : ComponentActivity() {
             Toast.makeText(applicationContext, "Erreur lors de l'enregistrement de l'image!", Toast.LENGTH_SHORT).show()
             Log.e("Save", "Failed to obtain output stream for URI: $uri")
         }
+    }
+
+    private fun saveImportedImage(combinedBitmap: Bitmap) {
+        val fileName = "IMG_${System.currentTimeMillis()}.jpg"
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/S501")
+        }
+        val uri =
+            contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+
+        uri?.let { outputUri ->
+            val outputStream = contentResolver.openOutputStream(outputUri)
+            outputStream?.use {
+                combinedBitmap.compress(Bitmap.CompressFormat.JPEG, 70, it)
+                it.close()
+                Toast.makeText(applicationContext, "Image analysée sauvegardée", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        } ?: Toast.makeText(applicationContext, "Impossible de sauvegarder l'image analysée", Toast.LENGTH_SHORT).show()
     }
 
     private fun askForStorageReadPermission(){
@@ -363,7 +367,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun chooseFromGalleryButton(){
+    fun chooseFromGalleryButton() {
         Box(modifier = Modifier.fillMaxSize()) {
             Button(
                 onClick = { chooseImageInGallery() },
@@ -413,13 +417,13 @@ class MainActivity : ComponentActivity() {
 
                 val paint = android.graphics.Paint().apply {
                     color = android.graphics.Color.GREEN
-                    strokeWidth = 2f
+                    strokeWidth = 20F
                     style = android.graphics.Paint.Style.STROKE
                 }
 
                 val textPaint = android.graphics.Paint().apply {
-                    color = android.graphics.Color.RED
-                    textSize = 40f
+                    color = android.graphics.Color.GREEN
+                    textSize = 80f
                     style = android.graphics.Paint.Style.FILL
                 }
 
@@ -437,25 +441,8 @@ class MainActivity : ComponentActivity() {
                 }
 
 
-                currentBitmap = bitmapCopy;
+                saveImportedImage(bitmapCopy);
             }
-        }
-    }
-
-    @Composable
-    private fun displayImageFromBitmap(){
-        var bitmap = currentBitmap;
-        if (bitmap != null){
-            Log.e("BitmapNotNull", "There should be a bitmap")
-            val imageBitmap = bitmap.asImageBitmap()
-            Image(
-                bitmap = imageBitmap,
-                contentDescription = "Selected Image",
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-        else{
-            Log.e("BitmapNull", "Bitmap is null")
         }
     }
 
@@ -467,6 +454,14 @@ class MainActivity : ComponentActivity() {
             e.printStackTrace()
             null
         }
+    }
+
+    private fun rotateBitmap(bitmap: Bitmap, rotationDegrees: Int): Bitmap {
+        val matrix = android.graphics.Matrix()
+        matrix.postRotate(rotationDegrees.toFloat())
+        return Bitmap.createBitmap(
+            bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true
+        )
     }
 
 }

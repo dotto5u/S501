@@ -7,21 +7,17 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
-import android.graphics.RectF
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -45,13 +41,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.PaintingStyle
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -86,15 +78,15 @@ class MainActivity : ComponentActivity() {
     private var detectedObjects by mutableStateOf(emptyList<DetectedObject>())
     private var cameraPreviewSize = mutableStateOf(Size(0f, 0f))
 
-    private val imageChooseCode = 10;
+    private val imageChooseCode = 10
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (!hasCameraPermission()) {
-            askForCameraPermission();
+            askForCameraPermission()
         }
         if (!hasStorageReadPermission()){
-            askForStorageReadPermission();
+            askForStorageReadPermission()
         }
 
         jsonFileService = JsonFileService(applicationContext)
@@ -190,7 +182,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                 )
 
-                                chooseFromGalleryButton();
+                                ChooseFromGalleryButton()
 
                                 Canvas(
                                     modifier = Modifier.fillMaxSize(),
@@ -270,7 +262,7 @@ class MainActivity : ComponentActivity() {
 
     private fun createOverlayBitmap(photoWidth: Int, photoHeight: Int): Bitmap {
         val overlayBitmap = Bitmap.createBitmap(photoWidth, photoHeight, Bitmap.Config.ARGB_8888)
-        val canvas = android.graphics.Canvas(overlayBitmap)
+        val canvas = Canvas(overlayBitmap)
 
         val scaleX = photoWidth.toFloat() / cameraPreviewSize.value.width
         val scaleY = photoHeight.toFloat() / cameraPreviewSize.value.height
@@ -298,14 +290,14 @@ class MainActivity : ComponentActivity() {
             )
         }
 
-        return overlayBitmap;
+        return overlayBitmap
     }
 
 
     private fun combineBitmaps(capturedBitmap: Bitmap, overlayBitmap: Bitmap): Bitmap {
         val combinedBitmap = Bitmap.createBitmap(capturedBitmap.width, capturedBitmap.height, capturedBitmap.config)
 
-        val canvas = android.graphics.Canvas(combinedBitmap)
+        val canvas = Canvas(combinedBitmap)
 
         canvas.drawBitmap(capturedBitmap, 0f, 0f, null)
         canvas.drawBitmap(overlayBitmap, 0f, 0f, null)
@@ -347,7 +339,7 @@ class MainActivity : ComponentActivity() {
                             Toast.makeText(applicationContext, "Erreur lors de la capture de l'image", Toast.LENGTH_SHORT).show()
                             return
                         }
-                        val rotatedBitmap = rotateBitmap(capturedBitmap, 90);
+                        val rotatedBitmap = rotateBitmap(capturedBitmap, 90)
 
                         val overlayBitmap = createOverlayBitmap(rotatedBitmap.width, rotatedBitmap.height)
                         val combinedBitmap = combineBitmaps(rotatedBitmap, overlayBitmap)
@@ -378,31 +370,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun saveImportedImage(combinedBitmap: Bitmap) {
-        val fileName = "IMG_${System.currentTimeMillis()}.jpg"
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
-            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/S501")
-        }
-        val uri =
-            contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-
-        uri?.let { outputUri ->
-            val outputStream = contentResolver.openOutputStream(outputUri)
-            outputStream?.use {
-                combinedBitmap.compress(Bitmap.CompressFormat.JPEG, 70, it)
-                it.close()
-                Toast.makeText(applicationContext, "Image analysée sauvegardée", Toast.LENGTH_SHORT)
-                    .show()
-            }
-        } ?: Toast.makeText(applicationContext, "Impossible de sauvegarder l'image analysée", Toast.LENGTH_SHORT).show()
-    }
-
     private fun askForStorageReadPermission(){
         ActivityCompat.requestPermissions(this,
             arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-            1);
+            1)
 
     }
 
@@ -411,11 +382,11 @@ class MainActivity : ComponentActivity() {
             this,
             arrayOf(Manifest.permission.CAMERA
             ),
-            0);
+            0)
     }
 
     @Composable
-    fun chooseFromGalleryButton() {
+    fun ChooseFromGalleryButton() {
         Box(modifier = Modifier.fillMaxSize()) {
             Button(
                 onClick = { chooseImageInGallery() },
@@ -437,7 +408,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    fun chooseImageInGallery(){
+    private fun chooseImageInGallery(){
         val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
         intent.type = "image/*"
         startActivityForResult(intent, imageChooseCode)
@@ -448,12 +419,11 @@ class MainActivity : ComponentActivity() {
 
         if (requestCode == imageChooseCode && resultCode == RESULT_OK && data != null) {
             val imageUri: Uri? = data.data
-            Log.d("ImportedImageUri", imageUri.toString())
 
             imageUri?.let {
-                val bitmap = getBitmapFromUri(it);
+                val bitmap = getBitmapFromUri(it)
 
-                val detector : TensorFlowDishDetector = TensorFlowDishDetector(
+                val detector = TensorFlowDishDetector(
                     context = applicationContext,
                     bitmap!!.width.toFloat(),
                     bitmap.height.toFloat()
@@ -462,13 +432,6 @@ class MainActivity : ComponentActivity() {
                     bitmap,
                     0,
                     android.util.Size(bitmap.width, bitmap.height))
-
-                //Sauvegarde des catégories en local
-                val imageId = getImageIdFromUri(imageUri)
-                val categories = bitmapDetections.mapIndexed { index, detectedObject ->
-                    Category(id = index, label = detectedObject.name)
-                }
-                jsonFileService.addCategoriesToJsonFile(imageId, categories)
 
                 val bitmapCopy = bitmap.copy(Bitmap.Config.ARGB_8888, true)
                 val canvas = Canvas(bitmapCopy)
@@ -487,7 +450,7 @@ class MainActivity : ComponentActivity() {
 
 
                 for (detection in bitmapDetections){
-                    canvas.drawRect(detection.box, paint);
+                    canvas.drawRect(detection.box, paint)
 
                     val textX = detection.box.left
                     val textY = detection.box.top - 10
@@ -499,9 +462,36 @@ class MainActivity : ComponentActivity() {
                 }
 
 
-                saveImportedImage(bitmapCopy);
+                saveImportedImage(bitmapCopy, bitmapDetections)
             }
         }
+    }
+
+    private fun saveImportedImage(combinedBitmap: Bitmap, detectedObjects: List<DetectedObject>) {
+        val fileName = "IMG_${System.currentTimeMillis()}.jpg"
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/S501")
+        }
+        val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+
+        uri?.let { outputUri ->
+            //Sauvegarde des catégories en local
+            val imageId = getImageIdFromUri(outputUri)
+            val categories = detectedObjects.mapIndexed { index, detectedObject ->
+                Category(id = index, label = detectedObject.name)
+            }
+            jsonFileService.addCategoriesToJsonFile(imageId, categories)
+
+            val outputStream = contentResolver.openOutputStream(outputUri)
+            outputStream?.use {
+                combinedBitmap.compress(Bitmap.CompressFormat.JPEG, 70, it)
+                it.close()
+                Toast.makeText(applicationContext, "Image analysée et sauvegardée avec succès !", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        } ?: Toast.makeText(applicationContext, "Impossible de sauvegarder l'image analysée", Toast.LENGTH_SHORT).show()
     }
 
     private fun getBitmapFromUri(uri: Uri): Bitmap? {
@@ -520,27 +510,6 @@ class MainActivity : ComponentActivity() {
         return Bitmap.createBitmap(
             bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true
         )
-    }
-
-    private fun saveCombinedImageToGallery(combinedBitmap: Bitmap) {
-        val fileName = "IMG_${System.currentTimeMillis()}.jpg"
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
-            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/S501")
-        }
-        val uri =
-            contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-
-        uri?.let { outputUri ->
-            val outputStream = contentResolver.openOutputStream(outputUri)
-            outputStream?.use {
-                combinedBitmap.compress(Bitmap.CompressFormat.JPEG, 70, it)
-                it.close()
-                Toast.makeText(applicationContext, "Image saved with overlay", Toast.LENGTH_SHORT)
-                    .show()
-            }
-        } ?: Toast.makeText(applicationContext, "Failed to save image", Toast.LENGTH_SHORT).show()
     }
 
     private fun getImageIdFromUri(uri: Uri): Long {

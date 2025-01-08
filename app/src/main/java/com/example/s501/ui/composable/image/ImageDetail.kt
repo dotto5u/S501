@@ -124,13 +124,19 @@ fun ImageDetail(image: Image, isLocal: Boolean, onNavigateBack: () -> Unit) {
                 )
             }
             Spacer(modifier = Modifier.height(10.dp))
-            AsyncImage(
-                modifier = Modifier.fillMaxWidth(),
-                model = image.url,
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                error = painterResource(R.drawable.default_image)
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 525.dp)
+            ) {
+                AsyncImage(
+                    model = image.url,
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    error = painterResource(R.drawable.default_image),
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
             Spacer(modifier = Modifier.height(15.dp))
             ImageDetailObjectList(categories, subtitleColor)
         }

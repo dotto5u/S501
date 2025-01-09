@@ -133,11 +133,12 @@ fun ImageDetail(image: Image, isLocal: Boolean, onNavigateBack: () -> Unit) {
                     )
 
                 }
-                if(isLocal) {
+                if (isLocal) {
                     Button(
-                        modifier = Modifier.padding(top = 15.dp),
+                        modifier = Modifier.padding(end = 5.dp, top = 15.dp),
                         onClick = {
                             val file = File(image.url.substringAfter("file://"))
+
                             if (file.exists() && file.delete()) {
                                 Toast.makeText(
                                     context,
@@ -172,21 +173,29 @@ fun ImageDetail(image: Image, isLocal: Boolean, onNavigateBack: () -> Unit) {
                 }
             }
             Spacer(modifier = Modifier.height(10.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 525.dp)
-            ) {
-                AsyncImage(
-                    model = image.url,
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    error = painterResource(R.drawable.default_image),
-                    modifier = Modifier.fillMaxSize()
-                )
+            Column(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(0.7f)
+                ) {
+                    AsyncImage(
+                        modifier = Modifier.fillMaxSize(),
+                        model = image.url,
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        error = painterResource(R.drawable.default_image)
+                    )
+                }
+                Spacer(modifier = Modifier.height(15.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(0.3f)
+                ) {
+                    ImageDetailObjectList(categories, subtitleColor)
+                }
             }
-            Spacer(modifier = Modifier.height(15.dp))
-            ImageDetailObjectList(categories, subtitleColor)
         }
     }
 }

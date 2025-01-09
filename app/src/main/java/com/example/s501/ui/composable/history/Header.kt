@@ -50,7 +50,6 @@ fun HistoryFilter(selectedValue: MutableState<Boolean>) {
             text = stringResource(R.string.history_filter_pill_local),
             isSelected = selectedValue.value,
             onClick = {
-                selectedValue.value = false
                 selectedValue.value = true
             }
         )
@@ -58,7 +57,6 @@ fun HistoryFilter(selectedValue: MutableState<Boolean>) {
             text = stringResource(R.string.history_filter_pill_online),
             isSelected = !selectedValue.value,
             onClick = {
-                selectedValue.value = true
                 selectedValue.value = false
             }
         )

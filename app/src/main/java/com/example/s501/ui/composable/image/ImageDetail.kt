@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -38,6 +39,7 @@ import com.example.s501.ui.theme.subtitleColor
 import com.example.s501.ui.viewmodel.image.ButtonUiState
 import com.example.s501.ui.viewmodel.image.ImageViewModel
 import com.example.s501.ui.viewmodel.image.ImageViewModelFactory
+import java.io.File
 
 @Composable
 fun ImageDetail(image: Image, isLocal: Boolean, onNavigateBack: () -> Unit) {
@@ -113,32 +115,87 @@ fun ImageDetail(image: Image, isLocal: Boolean, onNavigateBack: () -> Unit) {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            IconButton(
-                onClick = onNavigateBack,
-                modifier = Modifier
-                    .padding(start = 5.dp, top = 15.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = null
-                )
-            }
-            Spacer(modifier = Modifier.height(10.dp))
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 525.dp)
+                    .padding(top = 15.dp, start = 5.dp, end = 5.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                AsyncImage(
-                    model = image.url,
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    error = painterResource(R.drawable.default_image),
-                    modifier = Modifier.fillMaxSize()
-                )
+                IconButton(
+                    onClick = onNavigateBack,
+                    modifier = Modifier
+                        .padding(start = 5.dp, top = 15.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null
+                    )
+
+                }
+                if (isLocal) {
+                    Button(
+                        modifier = Modifier.padding(end = 5.dp, top = 15.dp),
+                        onClick = {
+                            val file = File(image.url.substringAfter("file://"))
+
+                            if (file.exists() && file.delete()) {
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.history_image_detail_delete_success),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                onNavigateBack()
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.history_image_detail_delete_fail),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Red,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = null,
+                                tint = Color.White
+                            )
+                        }
+                    }
+                }
             }
-            Spacer(modifier = Modifier.height(15.dp))
-            ImageDetailObjectList(categories, subtitleColor)
+            Spacer(modifier = Modifier.height(10.dp))
+            Column(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(0.7f)
+                ) {
+                    AsyncImage(
+                        modifier = Modifier.fillMaxSize(),
+                        model = image.url,
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        error = painterResource(R.drawable.default_image)
+                    )
+                }
+                Spacer(modifier = Modifier.height(15.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(0.3f)
+                ) {
+                    ImageDetailObjectList(categories, subtitleColor)
+                }
+            }
         }
     }
 }

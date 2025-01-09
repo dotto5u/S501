@@ -27,7 +27,7 @@ class TensorFlowDishDetector(
 
     //Detection parameters
     private val maxResults : Int = 1;
-    private val precisionThreshold : Float = 0.4f;
+    private val precisionThreshold : Float = 0.3f;
     private val iouThreshold : Float = 0.4f;
 
     //File paths

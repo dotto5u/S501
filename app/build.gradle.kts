@@ -67,6 +67,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation (libs.androidx.material.icons.extended)
     implementation(libs.androidx.navigation.common.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.cardview)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -91,4 +93,7 @@ dependencies {
     implementation(libs.tensorflow.lite.task.vision)
     implementation(libs.tensorflow.lite.gpu.delegate.plugin)
     implementation(libs.tensorflow.lite.gpu)
+
+    implementation(libs.androidx.cardview)
+
 }

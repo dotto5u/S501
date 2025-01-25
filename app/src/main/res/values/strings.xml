@@ -15,4 +15,7 @@
     <string name="history_image_detail_unsync_fail">Échec de la désynchronisation de l\'image</string>
     <string name="history_image_detail_delete_success">Image supprimer avec succès!</string>
     <string name="history_image_detail_delete_fail">Suppression image annuler</string>
+    <string name="login">Login</string>
+    <string name="password">Password</string>
+    <string name="username">Username</string>
 </resources>

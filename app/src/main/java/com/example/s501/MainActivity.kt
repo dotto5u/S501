@@ -55,6 +55,8 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.sharp.Person
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -163,7 +165,29 @@ class MainActivity : ComponentActivity() {
                                     currentScreen = "Camera",
                                     navController = navController
                                 )
+                            },
+                            topBar = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Sharp.Person, // Replace with the desired icon
+                                        contentDescription = "User Icon",
+                                        tint = Color.Magenta,
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd) // Align the icon to the top right
+                                            .size(40.dp) // Set the size of the icon
+                                            .clickable {
+                                                val intent = Intent(applicationContext, LoginActivity::class.java)
+                                                startActivity(intent)
+                                            }
+                                    )
+                                }
                             }
+
+
                         ) { innerPadding ->
                             Box(
                                 modifier = Modifier

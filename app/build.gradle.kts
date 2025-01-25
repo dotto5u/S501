@@ -49,6 +49,12 @@ android {
     }
 }
 
+configurations.all {
+    resolutionStrategy {
+        exclude(group = "com.google.ai.edge.litert", module = "litert-api")
+    }
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -81,10 +87,8 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.coil.compose)
 
-
-    implementation("org.tensorflow:tensorflow-lite:+")
-    implementation("org.tensorflow:tensorflow-lite-task-vision:+")
-    implementation("org.tensorflow:tensorflow-lite-gpu-delegate-plugin:+")
-    implementation("org.tensorflow:tensorflow-lite-gpu:+")
-
+    implementation(libs.tensorflow.lite)
+    implementation(libs.tensorflow.lite.task.vision)
+    implementation(libs.tensorflow.lite.gpu.delegate.plugin)
+    implementation(libs.tensorflow.lite.gpu)
 }

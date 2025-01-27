@@ -20,7 +20,6 @@ class ImageViewModel(
     private val repository: ImageRepository
 ): AndroidViewModel(application) {
     private var job: Job? = null
-
     private val _buttonUiState = MutableStateFlow<ButtonUiState>(ButtonUiState.Idle)
     val buttonUiState: StateFlow<ButtonUiState> = _buttonUiState.asStateFlow()
 

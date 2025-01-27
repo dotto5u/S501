@@ -15,6 +15,8 @@ class datasetCreator:
         self.__dataset_path = './dataset'
         self.__labelmap_path = './labelmap.json'
 
+        self.__images_per_class = 100 #0 if not capped
+
         self.__label_map = self.readLabelmap()
 
         self.createDatasetDirs()
@@ -85,7 +87,10 @@ class datasetCreator:
         for i in range(len(FilesOrDirs)) :
             currentPath = os.path.join(self.__labelled_data_path, FilesOrDirs[i])
             if (os.path.isdir(currentPath)):
-                self.exploreDataDir(currentPath)
+                if (self.__images_per_class == 0):
+                    self.exploreDataDir(currentPath)
+                else:
+                    self.exploreDataDirWithImageCap(currentPath)
 
 
     def redimensionAndCopyImageAndLabel(self, path, imageName, targetPath):
@@ -147,6 +152,29 @@ class datasetCreator:
 
         trainImg, validImg, testImg = self.chooseValidTestTrainFiles(
             allFiles=FilesOrDirs,
+            test=test,
+            valid=valid
+            )
+
+        for fileName in trainImg :
+            self.redimensionAndCopyImageAndLabel(path, fileName, os.path.join(self.__dataset_path, "train"))
+    
+        for fileName in testImg:
+           self.redimensionAndCopyImageAndLabel(path, fileName, os.path.join(self.__dataset_path, "test"))
+        
+        for fileName in validImg:
+            self.redimensionAndCopyImageAndLabel(path, fileName, os.path.join(self.__dataset_path, "valid"))
+
+    def exploreDataDirWithImageCap(self, path):
+        FilesOrDirs = os.listdir(path)
+
+        nbFiles = self.__images_per_class * 2
+        test = nbFiles/20
+        valid = nbFiles/10
+
+        trainImg, validImg, testImg = self.chooseValidTestTrainFilesWithCap(
+            allFiles=FilesOrDirs,
+            nbFiles=nbFiles,
             test=test,
             valid=valid
             )
@@ -228,6 +256,32 @@ class datasetCreator:
                     elif (i <= valid):
                         validImg.append(file)
                     else:
+                        trainImg.append(file)
+
+        return [trainImg, validImg, testImg]
+    
+    def chooseValidTestTrainFilesWithCap(self, allFiles, nbFiles, test, valid):
+        
+        shuffle(allFiles)
+
+        testImg = []
+        validImg = []
+        trainImg = []
+
+        for i in range(len(allFiles)):
+            file = allFiles[i]
+            if (str(file).endswith(".jpg")):
+                if (file in testImg or file in validImg or file in trainImg):
+                    continue
+                else:
+                    
+                    if (i <= test):
+                        testImg.append(file)
+                    elif (i <= valid):
+                        validImg.append(file)
+                    else:
+                        if (i >= nbFiles):
+                            break
                         trainImg.append(file)
 
         return [trainImg, validImg, testImg]

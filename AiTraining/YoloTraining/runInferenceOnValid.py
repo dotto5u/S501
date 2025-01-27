@@ -4,7 +4,7 @@ from ultralytics import YOLO
 import matplotlib.pyplot as plt
 import os
 
-modelPath = "train7Best.pt"
+modelPath = "train9best.pt"
 
 model = YOLO(modelPath)
 
@@ -23,9 +23,9 @@ for file in allFiles:
 
     annotated_frame = results[0].plot()
 
-    #plt.figure(figsize=(10, 10))
-    #plt.imshow(cv2.cvtColor(annotated_frame, cv2.COLOR_RGB2BGR))
-    #plt.axis('off')
-    #plt.show()
+    plt.figure(figsize=(10, 10))
+    plt.imshow(cv2.cvtColor(annotated_frame, cv2.COLOR_RGB2BGR))
+    plt.axis('off')
+    plt.show()
 
-    cv2.imwrite(os.path.join(output_dir_path, file), annotated_frame)
+    #cv2.imwrite(os.path.join(output_dir_path, file), annotated_frame)

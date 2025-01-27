@@ -4,11 +4,13 @@ namespace App\Controller;
 
 use App\Entity\Category;
 use App\Entity\Image;
+use App\Repository\UserRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\ImageRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -22,6 +24,58 @@ class ApiController extends AbstractController
 
         return new JsonResponse($json);
     }
+
+    #[Route('/user/register', name: 'app_user_register', methods: ['POST'])]
+    public function register(Request $request, UserRepository $userRepository, EntityManagerInterface $em, UserPasswordHasherInterface $passwordHasher): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+
+        if (!isset($data['email']) || !isset($data['password'])) {
+            return new JsonResponse(['error' => 'Email and password are required'], 400);
+        }
+
+        $email = $data['email'];
+        $password = $data['password'];
+
+        $user = $userRepository->findOneBy(['email' => $email]);
+
+        if ($user) {
+            return new JsonResponse(['error' => 'User already exists'], 400);
+        }
+
+        $user = new User();
+        $user->setEmail($email);
+        $user->setPassword($passwordHasher->hashPassword($user, $password));
+
+        $em->persist($user);
+        $em->flush();
+
+        return new JsonResponse(['success' => 'User registered successfully']);
+    }
+
+    #[Route('/user/login', name: 'app_user_login', methods: ['POST'])]
+    public function login(Request $request, UserRepository $userRepository, UserPasswordHasherInterface $passwordHasher): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+
+        if (!isset($data['email']) || !isset($data['password'])) {
+            return new JsonResponse(['error' => 'Email and password are required'], 400);
+        }
+
+        $email = $data['email'];
+        $password = $data['password'];
+
+        $user = $userRepository->findOneBy(['email' => $email]);
+
+        if (!$user) {
+            return new JsonResponse(['error' => 'Invalid credentials'], 400);
+        }
+
+        if (!$passwordHasher->isPasswordValid($user, $password)) {
+            return new JsonResponse(['error' => 'Invalid credentials'], 400);
+        }
+
+        return new JsonResponse(['success' => 'Login successful']);
+    }
+
 
     #[Route('/image/{image_id}/get', name: 'app_image_get', methods: ['GET'])]
     public function get(string $image_id, ImageRepository $imageRepository): JsonResponse

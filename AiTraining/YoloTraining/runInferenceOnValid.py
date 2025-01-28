@@ -4,12 +4,12 @@ from ultralytics import YOLO
 import matplotlib.pyplot as plt
 import os
 
-modelPath = "train9best.pt"
+modelPath = "train10best.pt"
 
 model = YOLO(modelPath)
 
 image_dir_path = './dataset/valid/images'
-output_dir_path = './testModelOutputBesst'
+output_dir_path = './testModelOutput'
 
 
 allFiles = os.listdir(image_dir_path)

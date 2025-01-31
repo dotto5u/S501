@@ -69,6 +69,7 @@ import com.example.s501.data.model.Category
 import com.example.s501.data.model.DetectedObject
 import com.example.s501.data.model.Image
 import com.example.s501.ui.composable.image.ImageDetail
+import com.example.s501.ui.composable.login.LoginScreen
 import com.google.gson.Gson
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -180,8 +181,7 @@ class MainActivity : ComponentActivity() {
                                             .align(Alignment.TopEnd) // Align the icon to the top right
                                             .size(40.dp) // Set the size of the icon
                                             .clickable {
-                                                val intent = Intent(applicationContext, LoginActivity::class.java)
-                                                startActivity(intent)
+                                                navController.navigate("login")
                                             }
                                     )
                                 }
@@ -272,6 +272,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
+                    composable("login") { LoginScreen() }
                 }
             }
         }

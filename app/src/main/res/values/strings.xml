@@ -9,12 +9,14 @@
     <string name="history_body_detected_objects">Objets détectées :</string>
     <string name="history_image_detail_sync">Synchroniser</string>
     <string name="history_image_detail_sync_success">Image synchronisée avec succès !</string>
+    <string name="history_image_detail_not_connected">Vous devez être connecté pour pouvoir synchroniser une image</string>
+    <string name="history_image_detail_no_categories">L\'image doit contenir des objets détectés pour être synchronisée</string>
     <string name="history_image_detail_sync_fail">L\'image n\'a pas pu être synchronisée</string>
     <string name="history_image_detail_unsync">Désynchroniser</string>
     <string name="history_image_detail_unsync_success">Image désynchronisée avec succès !</string>
     <string name="history_image_detail_unsync_fail">Échec de la désynchronisation de l\'image</string>
-    <string name="history_image_detail_delete_success">Image supprimer avec succès!</string>
-    <string name="history_image_detail_delete_fail">Suppression image annuler</string>
+    <string name="history_image_detail_delete_success">Image supprimée avec succès !</string>
+    <string name="history_image_detail_delete_fail">Échec de la suppression de l\'image</string>
     <string name="login">Login</string>
     <string name="password">Password</string>
     <string name="username">Username</string>

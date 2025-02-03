@@ -22,9 +22,10 @@ import com.example.s501.data.repository.ImageRepository
 import com.example.s501.ui.composable.BottomNavbar
 import com.example.s501.ui.viewmodel.history.HistoryViewModel
 import com.example.s501.ui.viewmodel.history.HistoryViewModelFactory
+import com.example.s501.ui.viewmodel.user.UserViewModel
 
 @Composable
-fun History(navController: NavHostController) {
+fun History(navController: NavHostController, userViewModel: UserViewModel) {
     val context = LocalContext.current
     val apiClient = remember { ApiClient() }
     val jsonFileService = remember { JsonFileService(context) }

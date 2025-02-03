@@ -15,6 +15,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
@@ -26,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.s501.R
 import com.example.s501.data.json.JsonFileService
@@ -39,10 +41,16 @@ import com.example.s501.ui.theme.subtitleColor
 import com.example.s501.ui.viewmodel.image.ButtonUiState
 import com.example.s501.ui.viewmodel.image.ImageViewModel
 import com.example.s501.ui.viewmodel.image.ImageViewModelFactory
+import com.example.s501.ui.viewmodel.user.UserViewModel
 import java.io.File
 
 @Composable
-fun ImageDetail(image: Image, isLocal: Boolean, onNavigateBack: () -> Unit) {
+fun ImageDetail(
+    navController: NavHostController,
+    userViewModel: UserViewModel,
+    image: Image,
+    isLocal: Boolean
+) {
     val context = LocalContext.current
     val apiClient = remember { ApiClient() }
     val jsonFileService = remember { JsonFileService(context) }
@@ -54,7 +62,10 @@ fun ImageDetail(image: Image, isLocal: Boolean, onNavigateBack: () -> Unit) {
         )
     )
 
+    val user by userViewModel.user.collectAsState()
+
     val imageId = image.id.toString()
+    val userId = user?.id ?: -1
     val categories = image.categories
 
     imageViewModel.fetchImageSyncStatus(imageId)
@@ -66,10 +77,8 @@ fun ImageDetail(image: Image, isLocal: Boolean, onNavigateBack: () -> Unit) {
 
     val syncButtonText = stringResource(R.string.history_image_detail_sync)
     val syncSuccessMessage = stringResource(R.string.history_image_detail_sync_success)
-    val syncFailMessage = stringResource(R.string.history_image_detail_sync_fail)
     val unsyncButtonText = stringResource(R.string.history_image_detail_unsync)
     val unsyncSuccessMessage = stringResource(R.string.history_image_detail_unsync_success)
-    val unsyncFailMessage = stringResource(R.string.history_image_detail_unsync_fail)
     val subtitleColor = subtitleColor()
 
     LaunchedEffect(buttonUiState) {
@@ -77,14 +86,14 @@ fun ImageDetail(image: Image, isLocal: Boolean, onNavigateBack: () -> Unit) {
             is ButtonUiState.Success -> {
                 val message = if (isSynced) unsyncSuccessMessage else syncSuccessMessage
 
-                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 imageViewModel.resetButtonUiState()
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
             }
             is ButtonUiState.Error -> {
-                val message = if (isSynced) unsyncFailMessage else syncFailMessage
+                val message = context.getString(buttonUiState.resId)
 
-                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 imageViewModel.resetButtonUiState()
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
             }
             else -> Unit
         }
@@ -99,7 +108,7 @@ fun ImageDetail(image: Image, isLocal: Boolean, onNavigateBack: () -> Unit) {
                         if (isSynced) {
                             imageViewModel.deleteImage(imageId)
                         } else {
-                            imageViewModel.uploadImage(image, categories)
+                            imageViewModel.uploadImage(image, userId, categories)
                         }
                     },
                     text = if (isSynced) unsyncButtonText else syncButtonText,
@@ -123,7 +132,7 @@ fun ImageDetail(image: Image, isLocal: Boolean, onNavigateBack: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
-                    onClick = onNavigateBack,
+                    onClick = { navController.popBackStack() },
                     modifier = Modifier
                         .padding(start = 5.dp, top = 15.dp)
                 ) {
@@ -145,7 +154,8 @@ fun ImageDetail(image: Image, isLocal: Boolean, onNavigateBack: () -> Unit) {
                                     context.getString(R.string.history_image_detail_delete_success),
                                     Toast.LENGTH_SHORT
                                 ).show()
-                                onNavigateBack()
+
+                                navController.popBackStack()
                             } else {
                                 Toast.makeText(
                                     context,

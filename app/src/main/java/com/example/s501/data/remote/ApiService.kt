@@ -15,10 +15,10 @@ import retrofit2.http.Path
 
 interface ApiService {
     @POST("user/register")
-    suspend fun registerUser(@Body user: User): ResponseBody
+    suspend fun registerUser(@Body user: User): User
 
     @POST("user/login")
-    suspend fun loginUser(@Body user: User): ResponseBody
+    suspend fun loginUser(@Body user: User): User
 
     @GET("image/{image_id}/get")
     suspend fun getOnlineImage(@Path("image_id") imageId: String): Image

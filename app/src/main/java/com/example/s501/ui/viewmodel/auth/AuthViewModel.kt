@@ -24,10 +24,10 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
             try {
                 _uiState.value = AuthUiState.Loading
 
-                val success = repository.registerUser(user)
+                val response: User? = repository.registerUser(user)
 
-                if (success) {
-                    _uiState.value = AuthUiState.Success
+                if (response != null) {
+                    _uiState.value = AuthUiState.Success(response)
                 } else {
                     _uiState.value = AuthUiState.Error
                 }
@@ -48,10 +48,10 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
             try {
                 _uiState.value = AuthUiState.Loading
 
-                val success = repository.loginUser(user)
+                val response: User? = repository.loginUser(user)
 
-                if (success) {
-                    _uiState.value = AuthUiState.Success
+                if (response != null) {
+                    _uiState.value = AuthUiState.Success(response)
                 } else {
                     _uiState.value = AuthUiState.Error
                 }

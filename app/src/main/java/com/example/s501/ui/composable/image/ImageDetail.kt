@@ -73,7 +73,7 @@ fun ImageDetail(
     val buttonUiState = imageViewModel.buttonUiState.collectAsState().value
     val isSynced = imageViewModel.isImageSynced.collectAsState().value
     val isLoading = buttonUiState is ButtonUiState.Loading
-    val enable = categories.isNotEmpty()
+    val enable = categories.isNotEmpty() && !isLoading
 
     val syncButtonText = stringResource(R.string.history_image_detail_sync)
     val syncSuccessMessage = stringResource(R.string.history_image_detail_sync_success)

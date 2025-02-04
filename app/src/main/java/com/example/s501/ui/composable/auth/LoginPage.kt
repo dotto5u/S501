@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -19,6 +20,7 @@ import androidx.navigation.NavHostController
 import com.example.s501.data.model.User
 import com.example.s501.data.remote.ApiClient
 import com.example.s501.data.repository.UserRepository
+import com.example.s501.ui.theme.Purple
 import com.example.s501.ui.viewmodel.auth.AuthUiState
 import com.example.s501.ui.viewmodel.auth.AuthViewModel
 import com.example.s501.ui.viewmodel.auth.AuthViewModelFactory
@@ -34,25 +36,28 @@ fun Login(navController: NavHostController, userViewModel: UserViewModel) {
         )
     )
 
-    var username by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
     val uiState by authViewModel.uiState.collectAsState()
+    val isLoading = uiState is AuthUiState.Loading
 
-    when (uiState) {
-        is AuthUiState.Loading -> CircularProgressIndicator()
-        is AuthUiState.Success -> {
-            val user = (uiState as AuthUiState.Success).user
+    LaunchedEffect(uiState) {
+        when (uiState) {
+            is AuthUiState.Success -> {
+                val user = (uiState as AuthUiState.Success).user
 
-            userViewModel.connect(user)
-            navController.navigate("camera_screen")
+                Toast.makeText(context, "Connexion effectuée avec succès !", Toast.LENGTH_SHORT).show()
+                userViewModel.connect(user)
+                navController.navigate("camera_screen")
+            }
+            is AuthUiState.Error -> {
+                val message = "Email ou mot de passe incorrect"
+
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            }
+            else -> Unit
         }
-        is AuthUiState.Error -> {
-            val message = "Nom d'utilisateur ou mot de passe incorrect"
-
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-        }
-        else -> {}
     }
 
     Scaffold(
@@ -67,14 +72,12 @@ fun Login(navController: NavHostController, userViewModel: UserViewModel) {
             ) {
                 IconButton(
                     onClick = { navController.popBackStack() },
-                    modifier = Modifier
-                        .padding(start = 5.dp, top = 15.dp)
+                    modifier = Modifier.padding(start = 5.dp, top = 15.dp)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = null
                     )
-
                 }
             }
         }
@@ -96,39 +99,59 @@ fun Login(navController: NavHostController, userViewModel: UserViewModel) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Login",
+                        text = "Connexion",
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF6200EA)
+                        color = Purple
                     )
                     Spacer(modifier = Modifier.height(40.dp))
                     OutlinedTextField(
-                        value = username,
-                        onValueChange = { username = it },
-                        label = { Text("Username") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") }
                     )
                     Spacer(modifier = Modifier.height(20.dp))
                     OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Password") },
-                        modifier = Modifier.fillMaxWidth()
+                        label = { Text("Mot de passe") },
+                        visualTransformation = PasswordVisualTransformation()
                     )
                     Spacer(modifier = Modifier.height(30.dp))
                     Button(
                         onClick = {
-                            if (username.isNotEmpty() && password.isNotEmpty()) {
-                                authViewModel.login(User(email = username, password = password))
+                            if (email.isNotEmpty() && password.isNotEmpty()) {
+                                authViewModel.login(
+                                    User(
+                                        email = email.trim(),
+                                        password = password.trim()
+                                    )
+                                )
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EA)),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(60.dp),
-                        shape = RoundedCornerShape(20.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = Purple),
+                        shape = RoundedCornerShape(20.dp),
+                        enabled = !isLoading
                     ) {
-                        Text(text = "Login", fontSize = 18.sp, color = Color.White)
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = "Connexion",
+                                fontSize = 18.sp,
+                                color = Color.White,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.height(20.dp))
                 }

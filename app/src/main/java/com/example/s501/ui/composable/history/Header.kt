@@ -2,9 +2,7 @@ package com.example.s501.ui.composable.history
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,19 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.s501.R
 import com.example.s501.ui.theme.Purple80
-
-@Composable
-fun HistoryHeader(selectedValue: MutableState<Boolean>) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(R.string.history_title),
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(5.dp))
-        HistoryFilter(selectedValue = selectedValue)
-    }
-}
 
 @Composable
 fun HistoryFilter(selectedValue: MutableState<Boolean>) {

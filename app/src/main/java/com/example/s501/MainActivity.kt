@@ -56,8 +56,6 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.foundation.clickable
-import androidx.compose.material.icons.sharp.Person
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -69,6 +67,7 @@ import com.example.s501.data.json.JsonFileService
 import com.example.s501.data.model.Category
 import com.example.s501.data.model.DetectedObject
 import com.example.s501.data.model.Image
+import com.example.s501.ui.composable.UserStatusIcon
 import com.example.s501.ui.composable.image.ImageDetail
 import com.example.s501.ui.composable.auth.Login
 import com.example.s501.ui.viewmodel.user.UserViewModel
@@ -121,11 +120,10 @@ class MainActivity : ComponentActivity() {
                             navArgument("isLocal") { type = NavType.BoolType }
                         )
                     ) { backStackEntry ->
+                        val isLocal = backStackEntry.arguments?.getBoolean("isLocal") ?: true
                         val encodedImageJson = backStackEntry.arguments?.getString("image")
                         val imageJson = URLDecoder.decode(encodedImageJson, StandardCharsets.UTF_8.toString())
                         val image = Gson().fromJson(imageJson, Image::class.java)
-
-                        val isLocal = backStackEntry.arguments?.getBoolean("isLocal") ?: true
 
                         image?.let {
                             ImageDetail(navController, userViewModel, image = it, isLocal = isLocal)
@@ -179,23 +177,12 @@ class MainActivity : ComponentActivity() {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(16.dp)
+                                        .padding(vertical = 10.dp, horizontal = 15.dp),
+                                    contentAlignment = Alignment.CenterEnd
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Sharp.Person,
-                                        contentDescription = "User Icon",
-                                        tint = Color.Magenta,
-                                        modifier = Modifier
-                                            .align(Alignment.TopEnd)
-                                            .size(40.dp)
-                                            .clickable {
-                                                navController.navigate("login")
-                                            }
-                                    )
+                                    UserStatusIcon(navController, userViewModel)
                                 }
                             }
-
-
                         ) { innerPadding ->
                             Box(
                                 modifier = Modifier

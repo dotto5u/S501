@@ -23,7 +23,7 @@ import com.example.s501.R
 import com.example.s501.ui.theme.Purple80
 
 @Composable
-fun HistoryFilter(selectedValue: MutableState<Boolean>) {
+fun HistoryFilter(isLocal: MutableState<Boolean>, isClicked: MutableState<Int>) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -33,16 +33,18 @@ fun HistoryFilter(selectedValue: MutableState<Boolean>) {
     ) {
         HistoryPill(
             text = stringResource(R.string.history_filter_pill_local),
-            isSelected = selectedValue.value,
+            isSelected = isLocal.value,
             onClick = {
-                selectedValue.value = true
+                isLocal.value = true
+                isClicked.value++
             }
         )
         HistoryPill(
             text = stringResource(R.string.history_filter_pill_online),
-            isSelected = !selectedValue.value,
+            isSelected = !isLocal.value,
             onClick = {
-                selectedValue.value = false
+                isLocal.value = false
+                isClicked.value++
             }
         )
     }

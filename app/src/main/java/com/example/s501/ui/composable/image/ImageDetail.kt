@@ -1,17 +1,16 @@
 package com.example.s501.ui.composable.image
 
 import android.app.Application
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,6 +34,7 @@ import com.example.s501.data.model.Category
 import com.example.s501.data.model.Image
 import com.example.s501.data.remote.ApiClient
 import com.example.s501.data.repository.ImageRepository
+import com.example.s501.ui.composable.icons.BackIcon
 import com.example.s501.ui.theme.Pink40
 import com.example.s501.ui.theme.Purple40
 import com.example.s501.ui.theme.subtitleColor
@@ -61,24 +61,38 @@ fun ImageDetail(
             repository = imageRepository
         )
     )
-
     val user by userViewModel.user.collectAsState()
 
-    val imageId = image.id.toString()
     val userId = user?.id ?: -1
+    val imageId = image.id.toString()
     val categories = image.categories
+    val isUserImage = image.userId == userId
 
     imageViewModel.fetchImageSyncStatus(imageId)
 
     val buttonUiState = imageViewModel.buttonUiState.collectAsState().value
     val isSynced = imageViewModel.isImageSynced.collectAsState().value
     val isLoading = buttonUiState is ButtonUiState.Loading
-    val enable = categories.isNotEmpty() && !isLoading
+    val enable = if (isLocal) {
+        categories.isNotEmpty() && !isLoading
+    } else {
+        isUserImage && !isLoading
+    }
 
     val syncButtonText = stringResource(R.string.history_image_detail_sync)
     val syncSuccessMessage = stringResource(R.string.history_image_detail_sync_success)
     val unsyncButtonText = stringResource(R.string.history_image_detail_unsync)
     val unsyncSuccessMessage = stringResource(R.string.history_image_detail_unsync_success)
+    val buttonText = if (isLocal) {
+        if (isSynced) unsyncButtonText else syncButtonText
+    } else {
+        unsyncButtonText
+    }
+    val buttonColor = if (isLocal) {
+        if (isSynced) Pink40 else Purple40
+    } else {
+        Pink40
+    }
     val subtitleColor = subtitleColor()
 
     LaunchedEffect(buttonUiState) {
@@ -88,6 +102,7 @@ fun ImageDetail(
 
                 imageViewModel.resetButtonUiState()
                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                if (isSynced) navController.popBackStack()
             }
             is ButtonUiState.Error -> {
                 val message = context.getString(buttonUiState.resId)
@@ -102,21 +117,28 @@ fun ImageDetail(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            if (isLocal) {
-                ImageDetailBottomBar(
-                    onClick = {
+            ImageDetailBottomBar(
+                onClick = {
+                    if (isLocal) {
                         if (isSynced) {
-                            imageViewModel.deleteImage(imageId)
+                            imageViewModel.deleteImage(imageId, userId)
                         } else {
                             imageViewModel.uploadImage(image, userId, categories)
                         }
-                    },
-                    text = if (isSynced) unsyncButtonText else syncButtonText,
-                    color = if (isSynced) Pink40 else Purple40,
-                    isLoading = isLoading,
-                    enable = enable
-                )
-            }
+                    } else {
+                        if (isUserImage) {
+                            imageViewModel.deleteImage(imageId, userId)
+                        }
+                    }
+                },
+                text = buttonText,
+                color = buttonColor,
+                enable = enable,
+                isLoading = isLoading
+            )
+        },
+        topBar = {
+            ImageDetailTopBar(context, navController, image, isLocal)
         }
     ) { paddingValues ->
         Column(
@@ -124,64 +146,6 @@ fun ImageDetail(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 15.dp, start = 5.dp, end = 5.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier
-                        .padding(start = 5.dp, top = 15.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = null
-                    )
-
-                }
-                if (isLocal) {
-                    Button(
-                        modifier = Modifier.padding(end = 5.dp, top = 15.dp),
-                        onClick = {
-                            val file = File(image.url.substringAfter("file://"))
-
-                            if (file.exists() && file.delete()) {
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.history_image_detail_delete_success),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-
-                                navController.popBackStack()
-                            } else {
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.history_image_detail_delete_fail),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Red,
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = null,
-                                tint = Color.White
-                            )
-                        }
-                    }
-                }
-            }
             Spacer(modifier = Modifier.height(10.dp))
             Column(modifier = Modifier.fillMaxSize()) {
                 Box(
@@ -204,6 +168,63 @@ fun ImageDetail(
                         .weight(0.3f)
                 ) {
                     ImageDetailObjectList(categories, subtitleColor)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ImageDetailTopBar(
+    context: Context,
+    navController: NavHostController,
+    image: Image,
+    isLocal: Boolean
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 15.dp, start = 5.dp, end = 5.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        BackIcon(navController)
+        if (isLocal) {
+            Button(
+                modifier = Modifier.padding(end = 5.dp, top = 15.dp),
+                onClick = {
+                    val file = File(image.url.substringAfter("file://"))
+
+                    if (file.exists() && file.delete()) {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.history_image_detail_delete_success),
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        navController.popBackStack()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.history_image_detail_delete_fail),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Red,
+                    contentColor = Color.White
+                )
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        tint = Color.White
+                    )
                 }
             }
         }
@@ -269,8 +290,8 @@ fun ImageDetailBottomBar(
     onClick: () -> Unit,
     text: String,
     color: Color,
-    isLoading: Boolean = false,
-    enable: Boolean = true
+    enable: Boolean = true,
+    isLoading: Boolean = false
 ) {
     BottomAppBar {
         Row(

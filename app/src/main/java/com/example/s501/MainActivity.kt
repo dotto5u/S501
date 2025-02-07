@@ -67,7 +67,7 @@ import com.example.s501.data.json.JsonFileService
 import com.example.s501.data.model.Category
 import com.example.s501.data.model.DetectedObject
 import com.example.s501.data.model.Image
-import com.example.s501.ui.composable.UserStatusIcon
+import com.example.s501.ui.composable.icons.UserIcon
 import com.example.s501.ui.composable.image.ImageDetail
 import com.example.s501.ui.composable.auth.Login
 import com.example.s501.ui.viewmodel.user.UserViewModel
@@ -129,11 +129,11 @@ class MainActivity : ComponentActivity() {
                             ImageDetail(navController, userViewModel, image = it, isLocal = isLocal)
                         }
                     }
-                    composable("login") {
-                        Login(navController, userViewModel)
-                    }
                     composable("history_screen") {
                         History(navController, userViewModel)
+                    }
+                    composable("login") {
+                        Login(navController, userViewModel)
                     }
                     composable("camera_screen") {
                         val analyzer = remember {
@@ -180,7 +180,7 @@ class MainActivity : ComponentActivity() {
                                         .padding(vertical = 10.dp, horizontal = 15.dp),
                                     contentAlignment = Alignment.CenterEnd
                                 ) {
-                                    UserStatusIcon(navController, userViewModel)
+                                    UserIcon(navController, userViewModel)
                                 }
                             }
                         ) { innerPadding ->

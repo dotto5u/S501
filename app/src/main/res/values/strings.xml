@@ -9,7 +9,8 @@
     <string name="history_body_detected_objects">Objets détectées :</string>
     <string name="history_image_detail_sync">Synchroniser</string>
     <string name="history_image_detail_sync_success">Image synchronisée avec succès !</string>
-    <string name="history_image_detail_not_connected">Vous devez être connecté pour pouvoir synchroniser une image</string>
+    <string name="history_image_detail_not_connected_upload">Vous devez être connecté pour pouvoir synchroniser une image</string>
+    <string name="history_image_detail_not_connected_delete">Vous devez être connecté pour pouvoir désynchroniser une image</string>
     <string name="history_image_detail_no_categories">L\'image doit contenir des objets détectés pour être synchronisée</string>
     <string name="history_image_detail_sync_fail">L\'image n\'a pas pu être synchronisée</string>
     <string name="history_image_detail_unsync">Désynchroniser</string>

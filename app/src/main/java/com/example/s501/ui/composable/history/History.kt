@@ -13,8 +13,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -29,13 +31,16 @@ import com.example.s501.data.json.JsonFileService
 import com.example.s501.data.remote.ApiClient
 import com.example.s501.data.repository.ImageRepository
 import com.example.s501.ui.composable.BottomNavbar
-import com.example.s501.ui.composable.UserStatusIcon
+import com.example.s501.ui.composable.icons.UserIcon
 import com.example.s501.ui.viewmodel.history.HistoryViewModel
 import com.example.s501.ui.viewmodel.history.HistoryViewModelFactory
 import com.example.s501.ui.viewmodel.user.UserViewModel
 
 @Composable
-fun History(navController: NavHostController, userViewModel: UserViewModel) {
+fun History(
+    navController: NavHostController,
+    userViewModel: UserViewModel
+) {
     val context = LocalContext.current
     val apiClient = remember { ApiClient() }
     val jsonFileService = remember { JsonFileService(context) }
@@ -46,10 +51,10 @@ fun History(navController: NavHostController, userViewModel: UserViewModel) {
             repository = imageRepository
         )
     )
+    val isLocal = rememberSaveable { mutableStateOf(true) }
+    val isClicked = remember { mutableIntStateOf(0) }
 
-    val isLocal = remember { mutableStateOf(true) }
-
-    LaunchedEffect(isLocal.value) {
+    LaunchedEffect(isLocal.value, isClicked.intValue) {
         historyViewModel.fetchImages(isLocal.value)
     }
 
@@ -70,12 +75,12 @@ fun History(navController: NavHostController, userViewModel: UserViewModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    modifier = Modifier.padding(top = 22.dp),
+                    modifier = Modifier.padding(top = 20.dp),
                     text = stringResource(R.string.history_title),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
-                UserStatusIcon(navController, userViewModel)
+                UserIcon(navController, userViewModel)
             }
         }
     ) { paddingValues ->
@@ -85,7 +90,7 @@ fun History(navController: NavHostController, userViewModel: UserViewModel) {
                 .padding(paddingValues)
                 .padding(top = 15.dp, start = 25.dp, end = 25.dp, bottom = 15.dp)
         ) {
-            HistoryFilter(selectedValue = isLocal)
+            HistoryFilter(isLocal, isClicked)
             Spacer(modifier = Modifier.height(15.dp))
             HistoryBody(
                 isLocal = isLocal.value,

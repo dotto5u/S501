@@ -49,7 +49,7 @@ class ImageViewModel(
         job = viewModelScope.launch {
             try {
                 if (userId == -1) {
-                    _buttonUiState.value = ButtonUiState.Error(R.string.history_image_detail_not_connected)
+                    _buttonUiState.value = ButtonUiState.Error(R.string.history_image_detail_not_connected_upload)
                 } else if (categories.isEmpty()) {
                     _buttonUiState.value = ButtonUiState.Error(R.string.history_image_detail_no_categories)
                 } else {
@@ -77,20 +77,29 @@ class ImageViewModel(
         }
     }
 
-    fun deleteImage(imageId: String) {
+    fun deleteImage(imageId: String, userId: Int) {
         job?.cancel()
 
         job = viewModelScope.launch {
             try {
-                _buttonUiState.value = ButtonUiState.Loading
+                if (userId == -1) {
+                    _buttonUiState.value = ButtonUiState.Error(R.string.history_image_detail_not_connected_delete)
+                } else {
+                    _buttonUiState.value = ButtonUiState.Loading
 
-                val success = repository.deleteImage(imageId)
+                    val success = repository.deleteImage(imageId)
 
-                _buttonUiState.value = if (success) ButtonUiState.Success else ButtonUiState.Error(R.string.history_image_detail_unsync_fail)
+                    _buttonUiState.value = if (success) {
+                        ButtonUiState.Success
+                    } else {
+                        ButtonUiState.Error(R.string.history_image_detail_unsync_fail)
+                    }
+                }
             } catch (e: Exception) {
                 _buttonUiState.value = ButtonUiState.Error(R.string.history_image_detail_unsync_fail)
                 Log.e("ImageViewModel", e.message ?: "Unknown error")
             }
         }
     }
+
 }

@@ -3,8 +3,6 @@ package com.example.s501.ui.composable.auth
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +18,7 @@ import androidx.navigation.NavHostController
 import com.example.s501.data.model.User
 import com.example.s501.data.remote.ApiClient
 import com.example.s501.data.repository.UserRepository
+import com.example.s501.ui.composable.icons.BackIcon
 import com.example.s501.ui.theme.Purple
 import com.example.s501.ui.viewmodel.auth.AuthUiState
 import com.example.s501.ui.viewmodel.auth.AuthViewModel
@@ -49,7 +48,7 @@ fun Login(navController: NavHostController, userViewModel: UserViewModel) {
 
                 Toast.makeText(context, "Connexion effectuée avec succès !", Toast.LENGTH_SHORT).show()
                 userViewModel.connect(user)
-                navController.navigate("camera_screen")
+                navController.popBackStack()
             }
             is AuthUiState.Error -> {
                 val message = "Email ou mot de passe incorrect"
@@ -70,15 +69,7 @@ fun Login(navController: NavHostController, userViewModel: UserViewModel) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier.padding(start = 5.dp, top = 15.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = null
-                    )
-                }
+                BackIcon(navController)
             }
         }
     ) { paddingValues ->

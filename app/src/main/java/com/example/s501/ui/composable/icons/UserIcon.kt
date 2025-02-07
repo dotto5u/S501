@@ -1,4 +1,4 @@
-package com.example.s501.ui.composable
+package com.example.s501.ui.composable.icons
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.padding
@@ -19,7 +19,7 @@ import com.example.s501.ui.theme.Purple40
 import com.example.s501.ui.viewmodel.user.UserViewModel
 
 @Composable
-fun UserStatusIcon(
+fun UserIcon(
     navController: NavController,
     userViewModel: UserViewModel
 ) {
@@ -29,7 +29,6 @@ fun UserStatusIcon(
 
     val iconImage = if (isConnected) Icons.AutoMirrored.Filled.ExitToApp else Icons.Sharp.Person
     val iconColor = if (isConnected) Color.Red else Purple40
-    val iconSize = if (isConnected) 30.dp else 40.dp
 
     IconButton(
         onClick = {
@@ -45,7 +44,7 @@ fun UserStatusIcon(
             .size(40.dp)
     ) {
         Icon(
-            modifier = Modifier.size(iconSize),
+            modifier = Modifier.size(35.dp),
             imageVector = iconImage,
             contentDescription = null,
             tint = iconColor

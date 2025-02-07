@@ -98,7 +98,7 @@ class ApiController extends AbstractController
         }
 
         $json = [
-            'id' => $image->getId(),
+            'id' => $image->getImageId(),
             'userId' => $image->getUser()->getId(),
             'url' => $image->getUrl(),
             'categories' => array_map(function ($category) {
@@ -123,7 +123,7 @@ class ApiController extends AbstractController
 
         $json = array_map(function ($image) {
             return [
-                'id' => $image->getId(),
+                'id' => $image->getImageId(),
                 'userId' => $image->getUser()->getId(),
                 'url' => $image->getUrl(),
                 'categories' => array_map(function ($category) {

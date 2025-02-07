@@ -19,7 +19,6 @@ import androidx.navigation.NavHostController
 import com.example.s501.data.model.User
 import com.example.s501.data.remote.ApiClient
 import com.example.s501.data.repository.UserRepository
-import com.example.s501.ui.composable.icons.BackIcon
 import com.example.s501.ui.theme.Purple
 import com.example.s501.ui.viewmodel.auth.AuthUiState
 import com.example.s501.ui.viewmodel.auth.AuthViewModel
@@ -27,7 +26,7 @@ import com.example.s501.ui.viewmodel.auth.AuthViewModelFactory
 import com.example.s501.ui.viewmodel.user.UserViewModel
 
 @Composable
-fun Login(navController: NavHostController, userViewModel: UserViewModel) {
+fun Register(navController: NavHostController, userViewModel: UserViewModel) {
     val context = LocalContext.current
     val apiClient = remember { ApiClient() }
     val authViewModel: AuthViewModel = viewModel(
@@ -38,6 +37,7 @@ fun Login(navController: NavHostController, userViewModel: UserViewModel) {
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
 
     val uiState by authViewModel.uiState.collectAsState()
     val isLoading = uiState is AuthUiState.Loading
@@ -46,32 +46,20 @@ fun Login(navController: NavHostController, userViewModel: UserViewModel) {
         when (uiState) {
             is AuthUiState.Success -> {
                 val user = (uiState as AuthUiState.Success).user
-
-                Toast.makeText(context, "Connexion effectuée avec succès !", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Inscription réussie avec succès !", Toast.LENGTH_SHORT).show()
                 userViewModel.connect(user)
-                navController.popBackStack()
+                navController.navigate("camera_screen")
             }
             is AuthUiState.Error -> {
-                val message = "Email ou mot de passe incorrect"
-                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context, "Une erreur est survenue lors de l'inscription", Toast.LENGTH_SHORT).show()
             }
             else -> Unit
         }
     }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 15.dp, start = 5.dp, end = 5.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                BackIcon(navController)
-            }
-        }
+        modifier = Modifier.fillMaxSize()
     ) { paddingValues ->
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -81,7 +69,7 @@ fun Login(navController: NavHostController, userViewModel: UserViewModel) {
                 modifier = Modifier
                     .padding(paddingValues)
                     .padding(horizontal = 30.dp, vertical = 20.dp),
-                shape = RoundedCornerShape(30.dp),
+                shape = RoundedCornerShape(30.dp)
             ) {
                 Column(
                     modifier = Modifier
@@ -90,7 +78,7 @@ fun Login(navController: NavHostController, userViewModel: UserViewModel) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Connexion",
+                        text = "Inscription",
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
                         color = Purple
@@ -110,16 +98,28 @@ fun Login(navController: NavHostController, userViewModel: UserViewModel) {
                         label = { Text("Mot de passe") },
                         visualTransformation = PasswordVisualTransformation()
                     )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = confirmPassword,
+                        onValueChange = { confirmPassword = it },
+                        label = { Text("Confirmer le mot de passe") },
+                        visualTransformation = PasswordVisualTransformation()
+                    )
                     Spacer(modifier = Modifier.height(30.dp))
                     Button(
                         onClick = {
-                            if (email.isNotEmpty() && password.isNotEmpty()) {
-                                authViewModel.login(
-                                    User(
-                                        email = email.trim(),
-                                        password = password.trim()
+                            if (email.isNotEmpty() && password.isNotEmpty() && confirmPassword.isNotEmpty()) {
+                                if (password == confirmPassword) {
+                                    authViewModel.register(
+                                        User(
+                                            email = email.trim(),
+                                            password = password.trim()
+                                        )
                                     )
-                                )
+                                } else {
+                                    Toast.makeText(context, "Les mots de passe ne correspondent pas", Toast.LENGTH_SHORT).show()
+                                }
                             } else {
                                 Toast.makeText(context, "Veuillez remplir tous les champs", Toast.LENGTH_SHORT).show()
                             }
@@ -139,7 +139,7 @@ fun Login(navController: NavHostController, userViewModel: UserViewModel) {
                             )
                         } else {
                             Text(
-                                text = "Connexion",
+                                text = "S'inscrire",
                                 fontSize = 18.sp,
                                 color = Color.White,
                                 style = MaterialTheme.typography.bodyLarge
@@ -148,9 +148,9 @@ fun Login(navController: NavHostController, userViewModel: UserViewModel) {
                     }
                     Spacer(modifier = Modifier.height(20.dp))
                     Text(
-                        text = "Pas de compte ? Inscrivez-vous",
+                        text = "Déjà un compte ? Connectez-vous",
                         modifier = Modifier.clickable {
-                            navController.navigate("register")
+                            navController.navigate("login")
                         },
                         color = Purple,
                         fontSize = 14.sp

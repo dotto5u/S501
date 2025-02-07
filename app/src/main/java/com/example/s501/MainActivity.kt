@@ -70,6 +70,7 @@ import com.example.s501.data.model.Image
 import com.example.s501.ui.composable.icons.UserIcon
 import com.example.s501.ui.composable.image.ImageDetail
 import com.example.s501.ui.composable.auth.Login
+import com.example.s501.ui.composable.auth.Register
 import com.example.s501.ui.viewmodel.user.UserViewModel
 import com.example.s501.ui.viewmodel.user.UserViewModelFactory
 import com.google.gson.Gson
@@ -113,6 +114,12 @@ class MainActivity : ComponentActivity() {
                     popEnterTransition = { EnterTransition.None },
                     popExitTransition = { ExitTransition.None },
                 ) {
+                    composable("login") {
+                        Login(navController, userViewModel)
+                    }
+                    composable("register") {
+                        Register(navController, userViewModel)
+                    }
                     composable(
                         route = "image_detail_screen/{image}/{isLocal}",
                         arguments = listOf(
@@ -131,9 +138,6 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("history_screen") {
                         History(navController, userViewModel)
-                    }
-                    composable("login") {
-                        Login(navController, userViewModel)
                     }
                     composable("camera_screen") {
                         val analyzer = remember {

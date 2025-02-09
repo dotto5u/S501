@@ -1,0 +1,26 @@
+<annotation>
+	<folder>steak</folder>
+	<filename>560503.jpg</filename>
+	<path>C:\Users\Arthur\Documents\GitHub\S501\AiTraining\Labelling\toLabel\steak\560503.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>512</width>
+		<height>512</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>steak</name>
+		<pose>Unspecified</pose>
+		<truncated>1</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>324</xmin>
+			<ymin>106</ymin>
+			<xmax>512</xmax>
+			<ymax>391</ymax>
+		</bndbox>
+	</object>
+</annotation>

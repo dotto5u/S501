@@ -1,0 +1,26 @@
+<annotation>
+	<folder>pancakes</folder>
+	<filename>708334.jpg</filename>
+	<path>C:\Users\dotto\Desktop\Matis\Documents\BUT\3A\S5\SAE\S501\AiTraining\Labelling\toLabel\pancakes\708334.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>512</width>
+		<height>512</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>pancakes</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>169</xmin>
+			<ymin>253</ymin>
+			<xmax>494</xmax>
+			<ymax>503</ymax>
+		</bndbox>
+	</object>
+</annotation>

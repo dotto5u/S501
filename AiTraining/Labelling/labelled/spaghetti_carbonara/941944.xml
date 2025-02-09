@@ -1,0 +1,26 @@
+<annotation>
+	<folder>spaghetti_carbonara</folder>
+	<filename>941944.jpg</filename>
+	<path>C:\Users\dotto\Desktop\Matis\Documents\BUT\3A\S5\SAE\S501\AiTraining\Labelling\toLabel\spaghetti_carbonara\941944.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>512</width>
+		<height>384</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>spaghetti carbonara</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>66</xmin>
+			<ymin>60</ymin>
+			<xmax>471</xmax>
+			<ymax>305</ymax>
+		</bndbox>
+	</object>
+</annotation>

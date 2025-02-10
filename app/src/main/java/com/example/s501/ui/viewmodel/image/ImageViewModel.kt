@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.s501.R
 import com.example.s501.data.model.Category
 import com.example.s501.data.model.Image
 import com.example.s501.data.model.ImageCategory
@@ -20,10 +21,8 @@ class ImageViewModel(
     private val repository: ImageRepository
 ): AndroidViewModel(application) {
     private var job: Job? = null
-
     private val _buttonUiState = MutableStateFlow<ButtonUiState>(ButtonUiState.Idle)
     val buttonUiState: StateFlow<ButtonUiState> = _buttonUiState.asStateFlow()
-
     private val _isImageSynced = MutableStateFlow(false)
     val isImageSynced: StateFlow<Boolean> = _isImageSynced
 
@@ -38,25 +37,28 @@ class ImageViewModel(
 
                 _isImageSynced.value = (image != null)
             } catch (e: Exception) {
-                Log.e("ImageViewModel", e.message ?: "Error while checking sync status")
                 _isImageSynced.value = false
+                Log.e("ImageViewModel", e.message ?: "Error while checking sync status")
             }
         }
     }
 
-    fun uploadImage(image: Image, categories: List<Category>) {
+    fun uploadImage(image: Image, userId: Int, categories: List<Category>) {
         job?.cancel()
 
         job = viewModelScope.launch {
             try {
-                if (categories.isEmpty()) {
-                    _buttonUiState.value = ButtonUiState.Error
+                if (userId == -1) {
+                    _buttonUiState.value = ButtonUiState.Error(R.string.history_image_detail_not_connected_upload)
+                } else if (categories.isEmpty()) {
+                    _buttonUiState.value = ButtonUiState.Error(R.string.history_image_detail_no_categories)
                 } else {
                     _buttonUiState.value = ButtonUiState.Loading
 
                     val file = File(image.url.substringAfter("file://"))
                     val imageCategory = ImageCategory(
-                        imageId = image.id.toLong(),
+                        imageId = image.id,
+                        userId = userId,
                         categories = categories
                     )
 
@@ -65,30 +67,39 @@ class ImageViewModel(
                     if (success) {
                         _buttonUiState.value = ButtonUiState.Success
                     } else {
-                        _buttonUiState.value = ButtonUiState.Error
+                        _buttonUiState.value = ButtonUiState.Error(R.string.history_image_detail_sync_fail)
                     }
                 }
             } catch (e: Exception) {
-                _buttonUiState.value = ButtonUiState.Error
+                _buttonUiState.value = ButtonUiState.Error(R.string.history_image_detail_sync_fail)
                 Log.e("ImageViewModel", e.message ?: "Unknown error")
             }
         }
     }
 
-    fun deleteImage(imageId: String) {
+    fun deleteImage(imageId: String, userId: Int) {
         job?.cancel()
 
         job = viewModelScope.launch {
             try {
-                _buttonUiState.value = ButtonUiState.Loading
+                if (userId == -1) {
+                    _buttonUiState.value = ButtonUiState.Error(R.string.history_image_detail_not_connected_delete)
+                } else {
+                    _buttonUiState.value = ButtonUiState.Loading
 
-                val success = repository.deleteImage(imageId)
+                    val success = repository.deleteImage(imageId)
 
-                _buttonUiState.value = if (success) ButtonUiState.Success else ButtonUiState.Error
+                    _buttonUiState.value = if (success) {
+                        ButtonUiState.Success
+                    } else {
+                        ButtonUiState.Error(R.string.history_image_detail_unsync_fail)
+                    }
+                }
             } catch (e: Exception) {
-                _buttonUiState.value = ButtonUiState.Error
+                _buttonUiState.value = ButtonUiState.Error(R.string.history_image_detail_unsync_fail)
                 Log.e("ImageViewModel", e.message ?: "Unknown error")
             }
         }
     }
+
 }

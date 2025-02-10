@@ -15,6 +15,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.compose.foundation.Canvas
@@ -66,7 +67,12 @@ import com.example.s501.data.json.JsonFileService
 import com.example.s501.data.model.Category
 import com.example.s501.data.model.DetectedObject
 import com.example.s501.data.model.Image
+import com.example.s501.ui.composable.icons.UserIcon
 import com.example.s501.ui.composable.image.ImageDetail
+import com.example.s501.ui.composable.auth.Login
+import com.example.s501.ui.composable.auth.Register
+import com.example.s501.ui.viewmodel.user.UserViewModel
+import com.example.s501.ui.viewmodel.user.UserViewModelFactory
 import com.google.gson.Gson
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -75,13 +81,15 @@ import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     private lateinit var jsonFileService: JsonFileService
+    private val userViewModel: UserViewModel by viewModels { UserViewModelFactory() }
+
     private var detectedObjects by mutableStateOf(emptyList<DetectedObject>())
     private var cameraPreviewSize = mutableStateOf(Size(0f, 0f))
-
     private val imageChooseCode = 10
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         if (!hasCameraPermission()) {
             askForCameraPermission()
         }
@@ -96,35 +104,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             S501Theme {
-                val analyzer = remember {
-                    mutableStateOf<DishImageAnalyzer?>(null)
-                }
-                val controller = remember {
-                    LifecycleCameraController(applicationContext).apply {
-                        setEnabledUseCases(
-                            CameraController.IMAGE_ANALYSIS or
-                                    CameraController.IMAGE_CAPTURE
-                        )
-                    }
-                }
-
-                LaunchedEffect(cameraPreviewSize) {
-                    if (cameraPreviewSize.value.width > 0 && cameraPreviewSize.value.height > 0) {
-                        analyzer.value = DishImageAnalyzer(
-                            detector = TensorFlowDishDetector(
-                                context = applicationContext,
-                                screenWidth = cameraPreviewSize.value.width,
-                                screenHeight = cameraPreviewSize.value.height,
-                            ),
-                            onResult = { detectedObjects = it }
-                        )
-                        controller.setImageAnalysisAnalyzer(
-                            ContextCompat.getMainExecutor(applicationContext),
-                            analyzer.value!!
-                        )
-                    }
-                }
-
                 val navController = rememberNavController()
 
                 NavHost(
@@ -135,27 +114,61 @@ class MainActivity : ComponentActivity() {
                     popEnterTransition = { EnterTransition.None },
                     popExitTransition = { ExitTransition.None },
                 ) {
+                    composable("login") {
+                        Login(navController, userViewModel)
+                    }
+                    composable("register") {
+                        Register(navController, userViewModel)
+                    }
                     composable(
-                        "image_detail_screen/{image}/{isLocal}",
+                        route = "image_detail_screen/{image}/{isLocal}",
                         arguments = listOf(
                             navArgument("image") { type = NavType.StringType },
                             navArgument("isLocal") { type = NavType.BoolType }
                         )
                     ) { backStackEntry ->
+                        val isLocal = backStackEntry.arguments?.getBoolean("isLocal") ?: true
                         val encodedImageJson = backStackEntry.arguments?.getString("image")
                         val imageJson = URLDecoder.decode(encodedImageJson, StandardCharsets.UTF_8.toString())
                         val image = Gson().fromJson(imageJson, Image::class.java)
 
-                        val isLocal = backStackEntry.arguments?.getBoolean("isLocal") ?: true
-
                         image?.let {
-                            ImageDetail(image = it, isLocal = isLocal, onNavigateBack = { navController.popBackStack() })
+                            ImageDetail(navController, userViewModel, image = it, isLocal = isLocal)
                         }
                     }
                     composable("history_screen") {
-                        History(navController)
+                        History(navController, userViewModel)
                     }
                     composable("camera_screen") {
+                        val analyzer = remember {
+                            mutableStateOf<DishImageAnalyzer?>(null)
+                        }
+                        val controller = remember {
+                            LifecycleCameraController(applicationContext).apply {
+                                setEnabledUseCases(
+                                    CameraController.IMAGE_ANALYSIS or
+                                            CameraController.IMAGE_CAPTURE
+                                )
+                            }
+                        }
+
+                        LaunchedEffect(cameraPreviewSize) {
+                            if (cameraPreviewSize.value.width > 0 && cameraPreviewSize.value.height > 0) {
+                                analyzer.value = DishImageAnalyzer(
+                                    detector = TensorFlowDishDetector(
+                                        context = applicationContext,
+                                        screenWidth = cameraPreviewSize.value.width,
+                                        screenHeight = cameraPreviewSize.value.height,
+                                    ),
+                                    onResult = { detectedObjects = it }
+                                )
+                                controller.setImageAnalysisAnalyzer(
+                                    ContextCompat.getMainExecutor(applicationContext),
+                                    analyzer.value!!
+                                )
+                            }
+                        }
+
                         Scaffold(
                             modifier = Modifier.fillMaxSize(),
                             bottomBar = {
@@ -163,6 +176,16 @@ class MainActivity : ComponentActivity() {
                                     currentScreen = "Camera",
                                     navController = navController
                                 )
+                            },
+                            topBar = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 10.dp, horizontal = 15.dp),
+                                    contentAlignment = Alignment.CenterEnd
+                                ) {
+                                    UserIcon(navController, userViewModel)
+                                }
                             }
                         ) { innerPadding ->
                             Box(
@@ -318,12 +341,12 @@ class MainActivity : ComponentActivity() {
 
         uri?.let { outputUri ->
             val imageId = getImageIdFromUri(outputUri)
-
+            val userId = userViewModel.user.value?.id ?: -1
             val categories = detectedObjects.mapIndexed { index, detectedObject ->
                 Category(id = index, label = detectedObject.name)
             }
 
-            jsonFileService.addCategoriesToJsonFile(imageId, categories)
+            jsonFileService.addCategoriesToJsonFile(imageId, userId, categories)
 
             controller.takePicture(
                 ImageCapture.OutputFileOptions.Builder(contentResolver.openOutputStream(outputUri)!!).build(),
@@ -477,12 +500,13 @@ class MainActivity : ComponentActivity() {
         val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
 
         uri?.let { outputUri ->
-            //Sauvegarde des catégories en local
+            // Sauvegarde des catégories en local
             val imageId = getImageIdFromUri(outputUri)
+            val userId = userViewModel.user.value?.id ?: -1
             val categories = detectedObjects.mapIndexed { index, detectedObject ->
                 Category(id = index, label = detectedObject.name)
             }
-            jsonFileService.addCategoriesToJsonFile(imageId, categories)
+            jsonFileService.addCategoriesToJsonFile(imageId, userId, categories)
 
             val outputStream = contentResolver.openOutputStream(outputUri)
             outputStream?.use {

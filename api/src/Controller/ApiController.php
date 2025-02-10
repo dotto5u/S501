@@ -4,11 +4,14 @@ namespace App\Controller;
 
 use App\Entity\Category;
 use App\Entity\Image;
+use App\Entity\User;
+use App\Repository\UserRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\ImageRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -23,6 +26,68 @@ class ApiController extends AbstractController
         return new JsonResponse($json);
     }
 
+    #[Route('/user/register', name: 'app_user_register', methods: ['POST'])]
+    public function register(Request $request, UserRepository $userRepository, EntityManagerInterface $em, UserPasswordHasherInterface $passwordHasher): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+
+        if (!isset($data['email']) || !isset($data['password'])) {
+            return new JsonResponse(['error' => 'Email and password are required'], 400);
+        }
+
+        $email = $data['email'];
+        $password = $data['password'];
+
+        $user = $userRepository->findOneBy(['email' => $email]);
+
+        if ($user) {
+            return new JsonResponse(['error' => 'User already exists'], 400);
+        }
+
+        $user = new User();
+        $user->setEmail($email);
+        $user->setPassword($passwordHasher->hashPassword($user, $password));
+
+        $em->persist($user);
+        $em->flush();
+
+        $json = [
+            'id' => $user->getId(),
+            'email' => $user->getEmail(),
+        ];
+
+        return new JsonResponse($json);
+    }
+
+    #[Route('/user/login', name: 'app_user_login', methods: ['POST'])]
+    public function login(Request $request, UserRepository $userRepository, UserPasswordHasherInterface $passwordHasher): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+
+        if (!isset($data['email']) || !isset($data['password'])) {
+            return new JsonResponse(['error' => 'Email and password are required'], 400);
+        }
+
+        $email = $data['email'];
+        $password = $data['password'];
+
+        $user = $userRepository->findOneBy(['email' => $email]);
+
+        if (!$user) {
+            return new JsonResponse(['error' => 'Invalid credentials'], 400);
+        }
+
+        if (!$passwordHasher->isPasswordValid($user, $password)) {
+            return new JsonResponse(['error' => 'Invalid credentials'], 400);
+        }
+
+        $json = [
+            'id' => $user->getId(),
+            'email' => $user->getEmail(),
+        ];
+
+        return new JsonResponse($json);
+    }
+
+
     #[Route('/image/{image_id}/get', name: 'app_image_get', methods: ['GET'])]
     public function get(string $image_id, ImageRepository $imageRepository): JsonResponse
     {
@@ -33,7 +98,8 @@ class ApiController extends AbstractController
         }
 
         $json = [
-            'id' => $image->getId(),
+            'id' => $image->getImageId(),
+            'userId' => $image->getUser()->getId(),
             'url' => $image->getUrl(),
             'categories' => array_map(function ($category) {
                 return [
@@ -57,7 +123,8 @@ class ApiController extends AbstractController
 
         $json = array_map(function ($image) {
             return [
-                'id' => $image->getId(),
+                'id' => $image->getImageId(),
+                'userId' => $image->getUser()->getId(),
                 'url' => $image->getUrl(),
                 'categories' => array_map(function ($category) {
                     return [
@@ -72,7 +139,7 @@ class ApiController extends AbstractController
     }
 
     #[Route('/image/upload', name: 'app_image_upload', methods: ['POST'])]
-    public function upload(Request $request, EntityManagerInterface $entityManager, CategoryRepository $categoryRepository, ImageRepository $imageRepository): JsonResponse {
+    public function upload(Request $request, EntityManagerInterface $entityManager, CategoryRepository $categoryRepository, ImageRepository $imageRepository, UserRepository $userRepository): JsonResponse {
         $uploadedFile = $request->files->get('image');
     
         if (!$uploadedFile || !$uploadedFile->isValid()) {
@@ -87,12 +154,27 @@ class ApiController extends AbstractController
     
         $imageCategoryArray = json_decode($imageCategoryData, true);
     
-        if (!is_array($imageCategoryArray) || !isset($imageCategoryArray['imageId']) || !isset($imageCategoryArray['categories'])) {
+        if (!is_array($imageCategoryArray) || !isset($imageCategoryArray['imageId']) || !isset($imageCategoryArray['userId']) || !isset($imageCategoryArray['categories'])) {
             return new JsonResponse(['error' => 'Invalid image category format'], 400);
         }
     
         $imageId = $imageCategoryArray['imageId'];
+        $userId = $imageCategoryArray['userId'];
         $categoriesArray = $imageCategoryArray['categories'];
+
+        if (!$imageId) {
+            return new JsonResponse(['error' => 'Image ID is required'], 400);
+        }
+
+        if (!$userId) {
+            return new JsonResponse(['error' => 'User ID is required'], 400);
+        }
+    
+        $user = $userRepository->find($userId);
+    
+        if (!$user) {
+            return new JsonResponse(['error' => 'User not found'], 404);
+        }
     
         if (!is_array($categoriesArray)) {
             return new JsonResponse(['error' => 'Invalid categories format'], 400);
@@ -144,6 +226,7 @@ class ApiController extends AbstractController
 
         $image = new Image();
         $image->setImageId($imageId);
+        $image->setUser($user);
         $image->setUrl($imageUrl);
     
         foreach ($categories as $category) {

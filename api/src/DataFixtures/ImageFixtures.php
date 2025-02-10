@@ -16,53 +16,61 @@ class ImageFixtures extends Fixture implements DependentFixtureInterface
         $imagesData = [
             [
                 'id' => 1,
-                'imageId' => uniqid(),
+                'imageId' => 1000000010,
                 'url' => 'https://via.placeholder.com/150/1',
                 'categories_ref' => ['category_1', 'category_2'],
+                'user_ref' => 'user_1',
             ],
             [
                 'id' => 2,
-                'imageId' => uniqid(),
+                'imageId' => 1000000011,
                 'url' => 'https://via.placeholder.com/150/2',
                 'categories_ref' => ['category_3', 'category_4'],
+                'user_ref' => 'user_2',
             ],
             [
                 'id' => 3,
-                'imageId' => uniqid(),
+                'imageId' => 1000000012,
                 'url' => 'https://via.placeholder.com/150/3',
                 'categories_ref' => ['category_5', 'category_6'],
+                'user_ref' => 'user_3',
             ],
             [
                 'id' => 4,
-                'imageId' => uniqid(),
+                'imageId' => 1000000013,
                 'url' => 'https://via.placeholder.com/150/4',
                 'categories_ref' => ['category_1', 'category_7'],
+                'user_ref' => 'user_1',
             ],
             [
                 'id' => 5,
-                'imageId' => uniqid(),
+                'imageId' => 1000000014,
                 'url' => 'https://via.placeholder.com/150/5',
                 'categories_ref' => ['category_1', 'category_8'],
+                'user_ref' => 'user_2',
             ],
             [
                 'id' => 6,
-                'imageId' => uniqid(),
+                'imageId' => 1000000015,
                 'url' => 'https://via.placeholder.com/150/6',
                 'categories_ref' => ['category_1', 'category_2', 'category_4'],
+                'user_ref' => 'user_3',
             ],
             [
                 'id' => 7,
-                'imageId' => uniqid(),
+                'imageId' => 1000000016,
                 'url' => 'https://via.placeholder.com/150/7',
                 'categories_ref' => ['category_1', 'category_6'],
+                'user_ref' => 'user_1',
             ],
             [
                 'id' => 8,
-                'imageId' => uniqid(),
+                'imageId' => 1000000017,
                 'url' => 'https://via.placeholder.com/150/8',
                 'categories_ref' => ['category_3', 'category_5', 'category_4'],
+                'user_ref' => 'user_2',
             ],
-        ];        
+        ];
 
         foreach ($imagesData as $data) {
             $image = new Image();
@@ -73,8 +81,10 @@ class ImageFixtures extends Fixture implements DependentFixtureInterface
                 $image->addCategory($this->getReference($categoryRef));
             }
 
+            $image->setUser($this->getReference($data['user_ref']));
+
             $manager->persist($image);
-            $this->addReference(self::IMAGE_REF_PREFIX.$data['id'], $image);
+            $this->addReference(self::IMAGE_REF_PREFIX . $data['id'], $image);
         }
 
         $manager->flush();
@@ -84,6 +94,7 @@ class ImageFixtures extends Fixture implements DependentFixtureInterface
     {
         return [
             CategoryFixtures::class,
+            UserFixtures::class,
         ];
     }
 }

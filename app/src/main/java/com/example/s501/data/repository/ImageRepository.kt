@@ -12,11 +12,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
-import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.HttpException
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 
@@ -46,13 +44,17 @@ class ImageRepository(
             cursor?.use { c ->
                 while (c.moveToNext()) {
                     val imageId = c.getLong(c.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
-                    val imagePath = c.getString(c.getColumnIndexOrThrow(MediaStore.Images.Media.DATA))
 
+                    val imagePath = c.getString(c.getColumnIndexOrThrow(MediaStore.Images.Media.DATA))
                     val imageUrl = "file://$imagePath"
-                    val categories = jsonFileService.getCategoriesFromJsonFile(imageId)
+
+                    val imageCategory: ImageCategory? = jsonFileService.getImageCategoryFromJsonFile(imageId)
+                    val userId = imageCategory?.userId ?: -1
+                    val categories = imageCategory?.categories ?: emptyList()
 
                     val image = Image(
-                        id = imageId.toInt(),
+                        id = imageId,
+                        userId = userId,
                         url = imageUrl,
                         categories = categories
                     )
@@ -73,7 +75,7 @@ class ImageRepository(
         return try {
             val image = apiService.getOnlineImage(imageId)
 
-            if (image.id != 0 && image.url.isNotEmpty() && image.categories.isNotEmpty()) {
+            if (image.id.toInt() != 0 && image.url.isNotEmpty() && image.categories.isNotEmpty()) {
                 image
             } else {
                 null
@@ -95,10 +97,10 @@ class ImageRepository(
             val requestBody = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
             val imagePart = MultipartBody.Part.createFormData("image", file.name, requestBody)
 
-            val categoriesJson = Gson().toJson(imageCategory)
-            val categoriesPart = categoriesJson.toRequestBody("application/json".toMediaTypeOrNull())
+            val imageCategoryJson = Gson().toJson(imageCategory)
+            val imageCategoryPart = imageCategoryJson.toRequestBody("application/json".toMediaTypeOrNull())
 
-            val responseBody = apiService.uploadImage(imagePart, categoriesPart)
+            val responseBody = apiService.uploadImage(imagePart, imageCategoryPart)
             val jsonResponse = responseBody.string()
 
             Log.d("ImageRepository", "API Response : $jsonResponse")

@@ -21,7 +21,7 @@ class JsonFileService(context: Context) {
         }
     }
 
-    fun addCategoriesToJsonFile(imageId: Long, categories: List<Category>) {
+    fun addCategoriesToJsonFile(imageId: Long, userId: Int, categories: List<Category>) {
         val imageCategoriesList = mutableListOf<ImageCategory>()
 
         if (jsonFile.exists()) {
@@ -33,6 +33,7 @@ class JsonFileService(context: Context) {
 
         val newCategory = ImageCategory(
             imageId = imageId,
+            userId = userId,
             categories = categories
         )
 
@@ -44,15 +45,14 @@ class JsonFileService(context: Context) {
         Log.d("JSON", "JSON file updated")
     }
 
-    fun getCategoriesFromJsonFile(imageId: Long): List<Category> {
+    fun getImageCategoryFromJsonFile(imageId: Long): ImageCategory? {
         if (jsonFile.exists()) {
             val jsonContent = jsonFile.readText()
             val imageCategoriesList = Gson().fromJson(jsonContent, Array<ImageCategory>::class.java).toList()
-            val imageCategory = imageCategoriesList.find { it.imageId == imageId }
 
-            return imageCategory?.categories ?: emptyList()
+            return imageCategoriesList.find { it.imageId == imageId }
         }
 
-        return emptyList()
+        return null
     }
 }

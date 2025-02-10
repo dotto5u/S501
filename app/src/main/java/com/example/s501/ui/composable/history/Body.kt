@@ -64,7 +64,7 @@ fun HistoryBody(
                     }
                 } else {
                     items(images) { image ->
-                        HistoryImage(image, isLocal, navController)
+                        HistoryImage(navController, image, isLocal)
                         Spacer(modifier = Modifier.height(30.dp))
                     }
                 }
@@ -82,7 +82,7 @@ fun HistoryBody(
 }
 
 @Composable
-fun HistoryImage(image: Image, isLocal: Boolean, navController: NavHostController) {
+fun HistoryImage(navController: NavHostController, image: Image, isLocal: Boolean) {
     val imageJson = Gson().toJson(image)
     val encodedImageJson = URLEncoder.encode(imageJson, StandardCharsets.UTF_8.toString())
 
@@ -100,7 +100,7 @@ fun HistoryImage(image: Image, isLocal: Boolean, navController: NavHostControlle
                 .width(150.dp)
                 .clickable {
                     navController.navigate(
-                        "image_detail_screen/$encodedImageJson/${isLocal}"
+                        "image_detail_screen/$encodedImageJson/$isLocal"
                     )
                 },
             model = image.url,

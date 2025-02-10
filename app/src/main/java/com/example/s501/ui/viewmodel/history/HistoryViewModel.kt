@@ -17,7 +17,6 @@ class HistoryViewModel(
     private val repository: ImageRepository
 ): AndroidViewModel(application) {
     private var job: Job? = null
-
     private val _uiState = MutableStateFlow<HistoryUiState>(HistoryUiState.Loading)
     val uiState: StateFlow<HistoryUiState> = _uiState.asStateFlow()
 

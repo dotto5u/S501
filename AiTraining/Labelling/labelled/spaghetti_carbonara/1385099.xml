@@ -1,0 +1,26 @@
+<annotation>
+	<folder>spaghetti_carbonara</folder>
+	<filename>1385099.jpg</filename>
+	<path>C:\Users\Arthur\Documents\GitHub\S501\AiTraining\Labelling\toLabel\spaghetti_carbonara\1385099.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>512</width>
+		<height>512</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>spaghetti carbonara</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>32</xmin>
+			<ymin>54</ymin>
+			<xmax>505</xmax>
+			<ymax>447</ymax>
+		</bndbox>
+	</object>
+</annotation>

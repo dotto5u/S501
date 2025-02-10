@@ -75,7 +75,7 @@ fun History(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    modifier = Modifier.padding(top = 20.dp),
+                    modifier = Modifier.padding(top = 30.dp),
                     text = stringResource(R.string.history_title),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold

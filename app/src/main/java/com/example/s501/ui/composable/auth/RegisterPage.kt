@@ -19,7 +19,7 @@ import androidx.navigation.NavHostController
 import com.example.s501.data.model.User
 import com.example.s501.data.remote.ApiClient
 import com.example.s501.data.repository.UserRepository
-import com.example.s501.ui.theme.Purple
+import com.example.s501.ui.theme.Purple40
 import com.example.s501.ui.viewmodel.auth.AuthUiState
 import com.example.s501.ui.viewmodel.auth.AuthViewModel
 import com.example.s501.ui.viewmodel.auth.AuthViewModelFactory
@@ -81,7 +81,7 @@ fun Register(navController: NavHostController, userViewModel: UserViewModel) {
                         text = "Inscription",
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Purple
+                        color = Purple40
                     )
                     Spacer(modifier = Modifier.height(40.dp))
                     OutlinedTextField(
@@ -127,7 +127,7 @@ fun Register(navController: NavHostController, userViewModel: UserViewModel) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(60.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Purple),
+                        colors = ButtonDefaults.buttonColors(containerColor = Purple40),
                         shape = RoundedCornerShape(20.dp),
                         enabled = !isLoading
                     ) {
@@ -152,7 +152,7 @@ fun Register(navController: NavHostController, userViewModel: UserViewModel) {
                         modifier = Modifier.clickable {
                             navController.navigate("login")
                         },
-                        color = Purple,
+                        color = Purple40,
                         fontSize = 14.sp
                     )
                 }

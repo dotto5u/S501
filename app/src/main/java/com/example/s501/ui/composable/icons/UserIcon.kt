@@ -40,7 +40,7 @@ fun UserIcon(
             }
         },
         modifier = Modifier
-            .padding(start = 5.dp, top = 15.dp)
+            .padding(start = 5.dp, top = 25.dp)
             .size(40.dp)
     ) {
         Icon(

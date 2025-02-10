@@ -20,7 +20,7 @@ import com.example.s501.data.model.User
 import com.example.s501.data.remote.ApiClient
 import com.example.s501.data.repository.UserRepository
 import com.example.s501.ui.composable.icons.BackIcon
-import com.example.s501.ui.theme.Purple
+import com.example.s501.ui.theme.Purple40
 import com.example.s501.ui.viewmodel.auth.AuthUiState
 import com.example.s501.ui.viewmodel.auth.AuthViewModel
 import com.example.s501.ui.viewmodel.auth.AuthViewModelFactory
@@ -49,7 +49,7 @@ fun Login(navController: NavHostController, userViewModel: UserViewModel) {
 
                 Toast.makeText(context, "Connexion effectuée avec succès !", Toast.LENGTH_SHORT).show()
                 userViewModel.connect(user)
-                navController.popBackStack()
+                navController.navigate("camera_screen")
             }
             is AuthUiState.Error -> {
                 val message = "Email ou mot de passe incorrect"
@@ -69,7 +69,7 @@ fun Login(navController: NavHostController, userViewModel: UserViewModel) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                BackIcon(navController)
+                BackIcon(navController, "camera_screen")
             }
         }
     ) { paddingValues ->
@@ -93,7 +93,7 @@ fun Login(navController: NavHostController, userViewModel: UserViewModel) {
                         text = "Connexion",
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Purple
+                        color = Purple40
                     )
                     Spacer(modifier = Modifier.height(40.dp))
                     OutlinedTextField(
@@ -127,7 +127,7 @@ fun Login(navController: NavHostController, userViewModel: UserViewModel) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(60.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Purple),
+                        colors = ButtonDefaults.buttonColors(containerColor = Purple40),
                         shape = RoundedCornerShape(20.dp),
                         enabled = !isLoading
                     ) {
@@ -152,7 +152,7 @@ fun Login(navController: NavHostController, userViewModel: UserViewModel) {
                         modifier = Modifier.clickable {
                             navController.navigate("register")
                         },
-                        color = Purple,
+                        color = Purple40,
                         fontSize = 14.sp
                     )
                 }

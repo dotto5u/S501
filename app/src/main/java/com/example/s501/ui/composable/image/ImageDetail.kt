@@ -102,7 +102,7 @@ fun ImageDetail(
 
                 imageViewModel.resetButtonUiState()
                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                if (isSynced) navController.popBackStack()
+                if (isSynced && !isLocal) navController.popBackStack()
             }
             is ButtonUiState.Error -> {
                 val message = context.getString(buttonUiState.resId)

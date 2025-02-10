@@ -15,7 +15,7 @@ class datasetCreator:
         self.__dataset_path = './dataset'
         self.__labelmap_path = './labelmap.json'
 
-        self.__images_per_class = 100 #0 if not capped
+        self.__images_per_class = 0 #0 if not capped
 
         self.__label_map = self.readLabelmap()
 
@@ -105,9 +105,11 @@ class datasetCreator:
 
         if not os.path.exists(baseImagePath):
             print(f"Redimensionning : Original img file doesn't exist : {baseImagePath}")
+            os.remove(baseLabelPath)
             return
         if not os.path.exists(baseLabelPath):
             print(f"Redimensionning : Original xml file doesn't exist : {baseLabelPath}")
+            os.remove(baseImagePath)
             return
 
         #Redimensioning image

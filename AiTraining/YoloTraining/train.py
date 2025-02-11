@@ -8,7 +8,7 @@ print(StartTime)
 
 results = model.train(
     data="data.yaml",
-    epochs=30,
+    epochs=60,
     imgsz=512)
 
 EndTime = datetime.now()

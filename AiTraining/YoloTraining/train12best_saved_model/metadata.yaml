@@ -1,0 +1,23 @@
+description: Ultralytics train12best model trained on data.yaml
+author: Ultralytics
+date: '2025-02-11T09:08:49.889091'
+version: 8.3.53
+license: AGPL-3.0 License (https://ultralytics.com/license)
+docs: https://docs.ultralytics.com
+stride: 32
+task: detect
+batch: 1
+imgsz:
+- 512
+- 512
+names:
+  0: onion rings
+  1: beef tartare
+  2: spaghetti carbonara
+  3: hamburger
+  4: caesar salad
+  5: french fries
+  6: ice cream
+  7: pancakes
+  8: pizza
+  9: steak

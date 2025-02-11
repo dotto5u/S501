@@ -4,7 +4,7 @@ from ultralytics import YOLO
 import matplotlib.pyplot as plt
 import os
 
-modelPath = "train10best.pt"
+modelPath = "train12best.pt"
 
 model = YOLO(modelPath)
 
